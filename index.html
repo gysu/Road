@@ -622,12 +622,13 @@
       dataTableInstance = $('#detail-table').DataTable({
         colReorder: true, 
         scrollX: true,    
-        scrollY: "55vh",  
+        scrollY: "700px",  
         scrollCollapse: true,
         paging: true,     
         pageLength: 50,   
         lengthMenu: [10, 25, 50, 100, 200, 500],
         ordering: true,   
+        order: [[4, 'desc']],
         dom: '<"top"il>rt<"bottom"p><"clear">', 
         language: {
             "processing":   "處理中...",
@@ -650,7 +651,17 @@
             { data: 'caseNo', title: '案件編號', width: '120px' },
             { data: 'status', title: '申請狀態', width: '120px' },
             { data: 'history', title: '打卡歷程', width: '110px' },
-            { data: 'checkInDate', title: '打卡記錄日', width: '120px' },
+            { 
+                data: 'checkInDate', 
+                title: '打卡記錄日', 
+                width: '120px',
+                render: function(data, type, row) {
+                    if (type === 'sort' || type === 'type') {
+                        return row.checkInDateRaw || '';
+                    }
+                    return data;
+                }
+            },
             { data: 'design', title: '設計圖', width: '90px' },
             { data: 'caseType', title: '案件類型', width: '120px' },
             { data: 'purpose', title: '施工目的', width: '150px' },
@@ -973,10 +984,13 @@
         }
 
         let latestRecordDateHtml = '';
+        let latestRecordDateRaw = '';
         if (details.length > 0 && details[0].recordDate) {
             latestRecordDateHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-primary); font-weight:500;">${details[0].recordDate}</span>`;
+            latestRecordDateRaw = details[0].recordDate;
         } else {
             latestRecordDateHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無紀錄</span>`;
+            latestRecordDateRaw = '';
         }
 
         // 解析地點與設計圖 (來自主檔)
@@ -996,10 +1010,11 @@
 
         return {
           caseNoRaw: d.caseNo, // 🚀 原始案件編號 (供 formatChildRow 使用)
-          caseNo: `<span style="font-family:monospace;font-size:14px;font-weight:600;color:var(--color-text-info);">${d.caseNo || ''}</span>`,
+          caseNo: `<a href="https://pwd.yunlin.gov.tw/YLPipe/CaseState?AppNo=${d.caseNo || ''}" target="_blank" style="text-decoration:none;"><span style="font-family:monospace;font-size:14px;font-weight:600;color:var(--color-text-info);">${d.caseNo || ''}</span></a>`,
           status: `<div style="text-align:center;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue)}</div>`,
           history: historyHtml,
           checkInDate: latestRecordDateHtml,
+          checkInDateRaw: latestRecordDateRaw,
           design: designHtml,
           caseType: `<span style="font-size:13px;">${d.caseType || ''}</span>`,
           purpose: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${d.purpose || ''}">${d.purpose || ''}</span>`,
