@@ -1001,9 +1001,17 @@
         }
 
         const parsedDesign = parseHyperlink(d.design);
+        let designUrl = parsedDesign.url;
+        if (!designUrl && d.design && (d.design.startsWith('http://') || d.design.startsWith('https://'))) {
+            designUrl = d.design;
+        }
+        if (!designUrl && d.caseNo) {
+            designUrl = `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+        }
+
         let designHtml = '';
-        if (parsedDesign.url) {
-            designHtml = `<a href="${parsedDesign.url}" target="_blank" style="text-decoration:none;"><span class="tag" style="background:#e3f2fd; color:#0b66c2; border:1px solid #bbdefb;">📐 查看設計圖</span></a>`;
+        if (designUrl) {
+            designHtml = `<a href="${designUrl}" target="_blank" style="text-decoration:none;"><span class="tag" style="background:#e3f2fd; color:#0b66c2; border:1px solid #bbdefb;">📐 查看設計圖</span></a>`;
         } else {
             designHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無</span>`;
         }
@@ -1076,10 +1084,17 @@
         const parsedIn = parseHyperlink(latest.checkIn || '');
         const parsedOut = parseHyperlink(latest.checkOut || '');
         const parsedDesign = parseHyperlink(d.design);
+        let designUrl = parsedDesign.url;
+        if (!designUrl && d.design && (d.design.startsWith('http://') || d.design.startsWith('https://'))) {
+            designUrl = d.design;
+        }
+        if (!designUrl && d.caseNo) {
+            designUrl = `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+        }
         const parsedLoc = parseHyperlink(d.locMap);
 
         const rowData = [
-          d.caseNo, exportStatus, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', parsedDesign.url,
+          d.caseNo, exportStatus, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
           d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
           d.permitStart, d.permitEnd, d.compReqDate, d.location, parsedLoc.url,
           d.supervisor, d.note, d.note1, d.manualNote
