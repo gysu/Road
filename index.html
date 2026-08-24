@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>路權挖掘案件管理_v4.9.3</title>
+  <title>路權挖掘案件管理_v5.1 </title>
   
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css">
@@ -104,7 +104,7 @@
     .local-select { font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); color:var(--color-text-primary); cursor:pointer; outline:none; box-shadow: var(--shadow-sm);}
     .local-select:hover { border-color: var(--color-text-info); }
 
-    /* 🚀 歷史明細子列展合控制圖示 */
+    /* 🚀 歷史明細子列展合控制圖示與外連按鈕 */
     table.dataTable tbody td.dt-control {
       text-align: center;
       cursor: pointer;
@@ -118,17 +118,35 @@
     table.dataTable tbody tr.shown td.dt-control:before {
       content: "➖";
     }
+
+    .road-link-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+      text-decoration: none;
+      border: 0.5px solid var(--color-border-info);
+      transition: opacity 0.15s ease;
+    }
+    .road-link-pill:hover {
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
 
   <div class="db-header">
-    <h1>路權挖掘申請案件 <span style="font-size:14px; color:var(--color-text-info); background:var(--color-background-info); padding:4px 8px; border-radius:12px;">v4.9.3 </span></h1>
-    <p>智慧分析</p>
+    <h1>路權挖掘申請案件管理儀表板 <span style="font-size:14px; color:var(--color-text-info); background:var(--color-background-info); padding:4px 8px; border-radius:12px;">v5.0</span></h1>
+    <p>智慧動態解析與多維度分析 </p>
   </div>
 
   <div id="loading-indicator" class="loading-status">
-     🔒 本網頁受安全加密保護，請輸入瀏覽密碼以載入資料...
+     <div class="spinner"></div> 正在同步資料，請稍候...
   </div>
 
   <div class="metric-grid">
@@ -174,7 +192,8 @@
       <p class="card-title" style="margin:0; font-size:16px;">進階動態交叉篩選與智慧搜尋控制台</p>
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:13px;font-weight:600;color:var(--color-text-info)" id="filter-count">0 件</span>
-        <button class="filter-btn" id="btn-export-excel" style="background:var(--color-background-success); color:var(--color-text-success); border-color:var(--color-border-success); font-weight:600;">📥 匯出為 Excel</button>
+        <button class="filter-btn" id="btn-export-excel-summary" style="background:var(--color-background-success); color:var(--color-text-success); border-color:var(--color-border-success); font-weight:600;">📥 匯出 Excel (案件總覽)</button>
+        <button class="filter-btn" id="btn-export-excel-detail" style="background:#e8f5e9; color:#1b5e20; border-color:#a5d6a7; font-weight:600;">📊 匯出 Excel (工作單拆列明細)</button>
       </div>
     </div>
     
@@ -208,8 +227,8 @@
     <div class="filter-section-title" style="color:var(--color-text-info);">📋 自訂欄位顯示/隱藏設定 (點擊切換)：</div>
     <div class="filter-row" id="filter-column-btns"></div>
 
-    <div class="table-container">
-      <table id="detail-table" class="display nowrap" style="width:100%"></table>
+    <div class="table-container" style="overflow-x:auto;">
+      <table id="detail-table" class="display nowrap" style="width:auto"></table>
     </div>
   </div>
 
@@ -222,21 +241,20 @@
     // ==========================================
     // 🛠️ GOOGLE SHEETS API V4 設定
     // ==========================================
-    // ==========================================
-    // 🛠️ GOOGLE SHEETS API V4 設定 (受安全加密保護)
-    // ==========================================
-    const ENCRYPTED_CONFIG = "eZocFAY9WfciuNBU9irBEhizZaAR9M6W0B8TYYR1964qBHwza82ZodYY0YIb3G4XpLEiOZwTZJr5IzYrpHfoVHLoPz9A49a7kHtnTSL2Yln9dtojhddiciBSED+tyRvExO9ls1RfkhMmJ+0HVozntf5/0ylQfpU2gEWjp8gYuUd9JIf1Fza/0r1l+81syFvgs73iknVelewEBmFerYw8Wcgu2i1ONQz36qv9jGBJWMjngwtqDPoagX0YDvL148ECbxIlM5XL2XL1wSBLshCSxJ8bOSnYahgUzwT+B6n3MY4+YCnKaOpWCLk4MCLmN4E=";
     const CONFIG = {
-      MASTER_SPREADSHEET_ID: "", 
+      MASTER_SPREADSHEET_ID: "1d84D9IYuJIdyXwIicYCGFb9TKp9ar9h4xfl5A4Nq2b0", 
       MASTER_RANGE: "工作表1!A:ZZ",
-      DETAIL_SPREADSHEET_ID: "",
+      DETAIL_SPREADSHEET_ID: "1d_VIQGF3QftLt0kGPsgNnFS6JnM7wUMJECPz6cqrAXo",
       DETAIL_RANGE: "施工紀錄明細表!A:ZZ",
-      API_KEY: ""
+      WORK_ORDERS_SPREADSHEET_ID: "1gLn5Tz-TcP8LELMNH6HxkLEa67DLWYX0Uhx4oNZvmIY",
+      WORK_ORDERS_RANGE: "工作表1!A:ZZ",
+      API_KEY: "AIzaSyA8Ok4r6-w8Ggii57gjPafEROlninDL6sg"
     };
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8J8wBMI4feKyITveSOTNfTUz0jNimhB2TmxXR0KnLGw458FenqFYDMqY3p2fmIR2_sA/exec";
     // ==========================================
 
     let globalData = [];
+    let globalWorkOrdersByRoadCaseNo = {}; // key: 路權案件編號 -> array of work orders
     let currentFilteredData = [];   
     let selectedAlerts = new Set(); 
     let selectedYears = new Set();  
@@ -249,6 +267,19 @@
     let textSearchQuery = ""; 
     
     let dataTableInstance = null; 
+    let searchDebounceTimer = null;
+    let filtersBound = false;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+    }
+
+    function safeUrl(value) {
+      try {
+        const url = new URL(String(value ?? ''), window.location.href);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+      } catch (_) { return ''; }
+    }
 
     function parseTaiwanDate(dateStr) {
       if (!dateStr) return null;
@@ -334,125 +365,232 @@
       return str;
     }
 
-    // 🚀 格式化子列明細 HTML
+    // 🚀 從 RD1 備註文字中提取路權案件編號
+    function extractRoadCaseNo(rd1Note) {
+      if (!rd1Note) return null;
+      const str = String(rd1Note).trim();
+      if (!str || str === '---' || str.toLowerCase() === 'null') return null;
+      const m10 = str.match(/\b\d{10}\b/);
+      if (m10) return m10[0];
+      const appNoMatch = str.match(/AppNo=([A-Za-z0-9]+)/i);
+      if (appNoMatch) return appNoMatch[1];
+      if (str.length === 10) return str;
+      return null;
+    }
+
+    // 🚀 格式化子列明細與關聯工單 HTML
     function formatChildRow(d) {
         const details = globalDetailData[d.caseNoRaw] || [];
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNoRaw] || [];
         
-        if (details.length === 0) {
-            return `<div style="padding:15px; background:var(--color-background-secondary); border-radius:8px; font-size:13px; color:var(--color-text-secondary); margin: 5px 10px;">📝 本案件尚無任何明細打卡紀錄。</div>`;
-        }
-
         let html = `
-            <div style="padding:15px; background:var(--color-background-secondary); border-radius:8px; border: 1px solid var(--color-border-primary); margin: 5px 10px;">
-                <p style="font-weight:600; margin-bottom:8px; color:var(--color-text-info); font-size:13px;">📅 歷史打卡明細紀錄 (共 ${details.length} 筆)：</p>
-                <table style="width:100%; border-collapse:collapse; background:var(--color-background-primary); border-radius:6px; overflow:hidden; box-shadow:var(--shadow-sm);">
-                    <thead>
-                        <tr style="background:#eef2f6; text-align:left; font-size:12px; font-weight:600; color:var(--color-text-secondary);">
-                            <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; width:120px;">打卡紀錄日</th>
-                            <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; width:120px;">進場狀態</th>
-                            <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; width:120px;">退場狀態</th>
-                            <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; width:120px;">施工日期</th>
-                            <th style="padding:8px 12px; border-bottom:1px solid #d0d7de;">備註</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        details.forEach(item => {
-            const parsedIn = parseHyperlink(item.checkIn);
-            let checkInHtml = '';
-            if (parsedIn.url) {
-                checkInHtml = `<a href="${parsedIn.url}" target="_blank" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${parsedIn.label}</span></a>`;
-            } else {
-                checkInHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${parsedIn.label || '無'}</span>`;
-            }
-
-            const parsedOut = parseHyperlink(item.checkOut);
-            let checkOutHtml = '';
-            if (parsedOut.url) {
-                checkOutHtml = `<a href="${parsedOut.url}" target="_blank" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${parsedOut.label}</span></a>`;
-            } else {
-                checkOutHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${parsedOut.label || '無'}</span>`;
-            }
-
-            html += `
-                <tr style="font-size:12px; border-bottom:1px solid #eef2f6;">
-                    <td style="padding:8px 12px; font-family:monospace;">${item.recordDate || ''}</td>
-                    <td style="padding:8px 12px;">${checkInHtml}</td>
-                    <td style="padding:8px 12px;">${checkOutHtml}</td>
-                    <td style="padding:8px 12px; font-family:monospace;">${item.workDate || '無'}</td>
-                    <td style="padding:8px 12px; color:var(--color-text-tertiary);" title="${item.note || ''}">${item.note || ''}</td>
-                </tr>
-            `;
-        });
-
-        html += `
-                    </tbody>
-                </table>
+          <div style="padding:15px; background:var(--color-background-secondary); border-radius:8px; border: 1px solid var(--color-border-primary); margin: 5px 10px; display:flex; flex-direction:column; gap:16px; align-items:flex-start;">
+            <!-- 🔗 系統快捷按鈕 -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--color-background-primary); padding:8px 12px; border-radius:6px; border:1px solid var(--color-border-tertiary); width: fit-content;">
+              <span style="font-size:13px; font-weight:700; color:var(--color-text-primary);">快捷連結：</span>
+              <a href="https://pwd.yunlin.gov.tw/YLPipe/CaseState?AppNo=${encodeURIComponent(d.caseNoRaw)}" target="_blank" rel="noopener noreferrer" class="road-link-pill">
+                🔗 歷程
+              </a>
+              <a href="https://pwd.yunlin.gov.tw/YLPipe/AppIn" target="_blank" rel="noopener noreferrer" class="road-link-pill">
+                🌐 雲林管線挖掘系統 ↗
+              </a>
             </div>
         `;
+
+        // --- 1. 關聯工作單明細表 (電信工程施工進度 Sheet: 1gLn5Tz-TcP8LELMNH6HxkLEa67DLWYX0Uhx4oNZvmIY) ---
+        if (workOrders.length > 0) {
+            html += `
+                <div style="max-width:100%;">
+                    <p style="font-weight:600; margin-bottom:8px; color:var(--color-text-info); font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <span>🔗 關聯工作單明細 (共 ${workOrders.length} 筆)：</span>
+                    </p>
+                    <div style="overflow-x:auto;">
+                      <table style="width:auto; border-collapse:collapse; background:var(--color-background-primary); border-radius:6px; overflow:hidden; box-shadow:var(--shadow-sm);">
+                          <thead>
+                              <tr style="background:#eef2f6; text-align:left; font-size:12px; font-weight:600; color:var(--color-text-secondary);">
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">工作單流水號</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">工程編號</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">回報狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">施工地點</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">RD1備註 (路權)</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">PCD施工備註</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+            `;
+            workOrders.forEach(wo => {
+                let statusTagHtml = '';
+                if ((wo.status || '').includes('1.已完工')) {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-success); color:var(--color-text-success); border:1px solid var(--color-border-success);">${escapeHtml(wo.status)}</span>`;
+                } else if ((wo.status || '').includes('未完工')) {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-warning); color:#d97a0d; border:1px solid #ffd54f;">${escapeHtml(wo.status)}</span>`;
+                } else {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(wo.status || '未回報')}</span>`;
+                }
+
+                html += `
+                    <tr style="font-size:12px; border-bottom:1px solid #eef2f6;">
+                        <td style="padding:8px 12px; font-family:monospace; font-weight:600; color:var(--color-text-info); white-space:nowrap;">${escapeHtml(wo.id || wo.engNo || '未填寫')}</td>
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(wo.engNo || '')}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${statusTagHtml}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-primary);" title="${escapeHtml(wo.loc || '')}">${escapeHtml(wo.loc || '')}</td>
+                        <td style="padding:8px 12px; font-family:monospace; color:var(--color-text-secondary);">${escapeHtml(wo.rd1Note || '')}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-tertiary);" title="${escapeHtml(wo.pcdNote || '')}">${escapeHtml(wo.pcdNote || '')}</td>
+                    </tr>
+                `;
+            });
+            html += `
+                          </tbody>
+                      </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<div style="font-size:13px; color:var(--color-text-tertiary);">🔗 尚無關聯工作單資料。</div>`;
+        }
+
+        // --- 2. 歷史打卡明細紀錄 ---
+        if (details.length > 0) {
+            html += `
+                <div style="max-width:100%;">
+                    <p style="font-weight:600; margin-bottom:8px; color:var(--color-text-info); font-size:13px;">📅 歷史打卡明細紀錄 (共 ${details.length} 筆)：</p>
+                    <div style="overflow-x:auto;">
+                      <table style="width:auto; border-collapse:collapse; background:var(--color-background-primary); border-radius:6px; overflow:hidden; box-shadow:var(--shadow-sm);">
+                          <thead>
+                              <tr style="background:#eef2f6; text-align:left; font-size:12px; font-weight:600; color:var(--color-text-secondary);">
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">打卡紀錄日</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">進場狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">退場狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">施工日期</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">備註</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+            `;
+
+            details.forEach(item => {
+                const parsedIn = parseHyperlink(item.checkIn);
+                let checkInHtml = '';
+                const safeInUrl = safeUrl(parsedIn.url);
+                if (safeInUrl) {
+                    checkInHtml = `<a href="${escapeHtml(safeInUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${escapeHtml(parsedIn.label)}</span></a>`;
+                } else {
+                    checkInHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(parsedIn.label || '無')}</span>`;
+                }
+
+                const parsedOut = parseHyperlink(item.checkOut);
+                let checkOutHtml = '';
+                const safeOutUrl = safeUrl(parsedOut.url);
+                if (safeOutUrl) {
+                    checkOutHtml = `<a href="${escapeHtml(safeOutUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${escapeHtml(parsedOut.label)}</span></a>`;
+                } else {
+                    checkOutHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(parsedOut.label || '無')}</span>`;
+                }
+
+                html += `
+                    <tr style="font-size:12px; border-bottom:1px solid #eef2f6;">
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(item.recordDate || '')}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${checkInHtml}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${checkOutHtml}</td>
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(item.workDate || '無')}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-tertiary);" title="${escapeHtml(item.note || '')}">${escapeHtml(item.note || '')}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                          </tbody>
+                      </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<div style="font-size:13px; color:var(--color-text-tertiary);">📝 本案件尚無任何明細打卡紀錄。</div>`;
+        }
+
+        html += `</div>`;
         return html;
     }
 
     let globalDetailData = {}; // 儲存案件打卡歷史明細
 
-    // 核心安全驗證解密程序
-    async function initSecureConnection() {
+    async function fetchCloudSheetsData() {
       const password = prompt("🔐 請輸入網頁瀏覽密碼：");
       if (!password) {
         document.getElementById('loading-indicator').innerHTML = `❌ <b>拒絕存取</b>：必須輸入密碼才能檢視路權資訊。`;
-        document.getElementById('loading-indicator').style.background = "var(--color-background-danger)";
-        document.getElementById('loading-indicator').style.color = "var(--color-text-danger)";
+        document.getElementById('loading-indicator').style.background = 'var(--color-background-danger)';
+        document.getElementById('loading-indicator').style.color = 'var(--color-text-danger)';
         return;
       }
 
-      try {
-        const textEncoder = new TextEncoder();
-        const combined = new Uint8Array(atob(ENCRYPTED_CONFIG).split("").map(c => c.charCodeAt(0)));
-        const salt = combined.slice(0, 16);
-        const iv = combined.slice(16, 28);
-        const encryptedData = combined.slice(28);
-
-        const keyMaterial = await window.crypto.subtle.importKey("raw", textEncoder.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"]);
-        const key = await window.crypto.subtle.deriveKey({ name: "PBKDF2", salt: salt, iterations: 10000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
-        const decryptedDecoded = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, encryptedData);
-        
-        const decryptedText = new TextDecoder().decode(decryptedDecoded);
-        if (!decryptedText) throw new Error("解密無效。");
-        const realConfig = JSON.parse(decryptedText);
-        
-        CONFIG.API_KEY = realConfig.API_KEY;
-        CONFIG.MASTER_SPREADSHEET_ID = realConfig.MASTER_SPREADSHEET_ID;
-        CONFIG.DETAIL_SPREADSHEET_ID = realConfig.DETAIL_SPREADSHEET_ID;
-        
-        await fetchCloudSheetsData();
-      } catch (err) {
-        console.error(err);
-        document.getElementById('loading-indicator').innerHTML = `❌ <b>驗證失敗</b>：密碼錯誤，無法解密安全金鑰。`;
-        document.getElementById('loading-indicator').style.background = "var(--color-background-danger)";
-        document.getElementById('loading-indicator').style.color = "var(--color-text-danger)";
-      }
-    }
-
-    async function fetchCloudSheetsData() {
-      if (!CONFIG.API_KEY || CONFIG.API_KEY.includes("請在此填寫你的_API_KEY")) {
-        document.getElementById('loading-indicator').innerHTML = `⚠️ <b>參數尚未設定完成</b>：請先解密或填入您的 GCP API 金鑰。`;
+      if (CONFIG.API_KEY.includes("請在此填寫你的_API_KEY")) {
+        document.getElementById('loading-indicator').innerHTML = `⚠️ <b>參數尚未設定完成</b>：請先填入您的 GCP API 金鑰。`;
         return;
       }
-      document.getElementById('loading-indicator').innerHTML = `<div class="spinner"></div> 密碼驗證成功！正在同步資料，請稍候...`;
       
       const masterUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.MASTER_SPREADSHEET_ID}/values/${encodeURIComponent(CONFIG.MASTER_RANGE)}?key=${CONFIG.API_KEY}&valueRenderOption=FORMULA`;
       const detailUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.DETAIL_SPREADSHEET_ID}/values/${encodeURIComponent(CONFIG.DETAIL_RANGE)}?key=${CONFIG.API_KEY}&valueRenderOption=FORMULA`;
+      const workOrdersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.WORK_ORDERS_SPREADSHEET_ID}/values/${encodeURIComponent(CONFIG.WORK_ORDERS_RANGE)}?key=${CONFIG.API_KEY}`;
 
       try {
-        // 同時抓取主檔與明細檔
-        const [masterRes, detailRes] = await Promise.all([
+        // 同時抓取主檔、打卡明細檔與工作單檔
+        const [masterRes, detailRes, workOrdersRes] = await Promise.all([
             fetch(masterUrl).then(r => r.json()),
-            fetch(detailUrl).then(r => r.json())
+            fetch(detailUrl).then(r => r.json()),
+            fetch(workOrdersUrl).then(r => r.json())
         ]);
 
         if (masterRes.error) throw new Error("主檔讀取失敗: " + masterRes.error.message);
         if (detailRes.error) throw new Error("明細檔讀取失敗: " + detailRes.error.message);
+        if (workOrdersRes.error) throw new Error("工作單試算表讀取失敗: " + workOrdersRes.error.message);
+
+        // --- 0. 解析工作單 (Work Orders Sheet: 1gLn5Tz-TcP8LELMNH6HxkLEa67DLWYX0Uhx4oNZvmIY) ---
+        const woValues = workOrdersRes.values || [];
+        globalWorkOrdersByRoadCaseNo = {};
+        if (woValues.length > 1) {
+            const woHeaders = woValues[0].map(h => h ? String(h).trim() : '');
+            let woIdxEngNo = woHeaders.indexOf('工程編號_x');
+            if (woIdxEngNo === -1) woIdxEngNo = woHeaders.indexOf('工程編號');
+            if (woIdxEngNo === -1) woIdxEngNo = woHeaders.findIndex(h => h.includes('工程編號'));
+
+            let woIdxId = woHeaders.indexOf('工作單流水號');
+            if (woIdxId === -1) woIdxId = woHeaders.indexOf('工作單編號');
+            if (woIdxId === -1) woIdxId = woHeaders.findIndex(h => h.includes('工作單'));
+            const woIdxStatus = woHeaders.indexOf('回報狀態');
+            const woIdxLoc = woHeaders.indexOf('施工地點');
+            const woIdxRd1Note = woHeaders.indexOf('RD1備註');
+            
+            let woIdxPcdNote = woHeaders.indexOf('PCD施工備註');
+            if (woIdxPcdNote === -1) {
+                woIdxPcdNote = woHeaders.findIndex(h => h.includes('PCD') || h.includes('施工備註'));
+            }
+            if (woIdxPcdNote === -1 && woHeaders.length > 11) {
+                woIdxPcdNote = 11;
+            }
+
+            woValues.slice(1).forEach(row => {
+                const getCell = idx => (idx !== -1 && idx < row.length && row[idx] !== undefined) ? String(row[idx]).trim() : '';
+                const rd1Note = getCell(woIdxRd1Note);
+                const roadCaseNo = extractRoadCaseNo(rd1Note);
+                if (!roadCaseNo) return;
+
+                if (!globalWorkOrdersByRoadCaseNo[roadCaseNo]) {
+                    globalWorkOrdersByRoadCaseNo[roadCaseNo] = [];
+                }
+
+                let rawStatus = getCell(woIdxStatus);
+                if (!rawStatus || rawStatus === 'null' || rawStatus === '尚未回報' || rawStatus === '') rawStatus = '未回報';
+
+                globalWorkOrdersByRoadCaseNo[roadCaseNo].push({
+                    engNo: getCell(woIdxEngNo),
+                    id: getCell(woIdxId),
+                    status: rawStatus,
+                    loc: getCell(woIdxLoc),
+                    rd1Note: rd1Note,
+                    pcdNote: getCell(woIdxPcdNote)
+                });
+            });
+        }
 
         // --- 1. 解析明細檔 (Detail Sheet) ---
         const detailValues = detailRes.values || [];
@@ -547,6 +685,7 @@
 
         const todayDate = new Date();
         todayDate.setHours(0, 0, 0, 0); 
+        const currentRocYear = todayDate.getFullYear() - 1911;
 
         globalData = rows.map(row => {
           const getCell = (idx) => (idx !== -1 && idx < row.length && row[idx] !== undefined) ? String(row[idx]).trim() : '';
@@ -592,7 +731,7 @@
             status: statusVal,
             applicant: getCleanCell(idxApplicant) || '未填寫',
             location: getCleanCell(idxLocation),
-            contractor: getCleanCell(idxContractor) || '未知廠商',
+            contractor: (getCleanCell(idxContractor) || '未知').substring(0, 2),
             supervisor: getCleanCell(idxSupervisor),
             note: note,
             note1: note1,
@@ -604,15 +743,24 @@
             manualNote: getCleanCell(idxManualNote),
             isExpiringSoon: isExpiringSoon, 
             isOverdue: isOverdue,
+            isCompletedOrCanceled: isCompletedOrCanceled,
             locMap: getCell(idxLocMap),
             design: getCell(idxDesign)
           };
-        }).filter(d => d.caseNo !== ''); 
+        }).filter(d => {
+          if (!d.caseNo) return false;
+          // 🚀 依民國年份剔除距今2年(含)以上已完工/已結案/已註銷/退件的舊案件 (例: 今年115年，剔除 113年及以前已結案的案件)
+          const caseRocYear = parseInt(d.year, 10);
+          if (!isNaN(caseRocYear) && d.isCompletedOrCanceled && caseRocYear <= (currentRocYear - 2)) {
+            return false;
+          }
+          return true;
+        }); 
 
         document.getElementById('loading-indicator').style.display = 'none';
         calculateAndRenderDashboard();
       } catch (error) {
-        document.getElementById('loading-indicator').innerHTML = `❌ <b>雲端連線失敗</b>：${error.message}`;
+        document.getElementById('loading-indicator').innerHTML = `❌ <b>雲端連線失敗</b>：${escapeHtml(error.message)}`;
         document.getElementById('loading-indicator').style.background = 'var(--color-background-danger)';
         document.getElementById('loading-indicator').style.color = 'var(--color-text-danger)';
       }
@@ -621,14 +769,11 @@
     function initDataTable() {
       dataTableInstance = $('#detail-table').DataTable({
         colReorder: true, 
-        scrollX: true,    
-        scrollY: "700px",  
-        scrollCollapse: true,
         paging: true,     
         pageLength: 50,   
         lengthMenu: [10, 25, 50, 100, 200, 500],
         ordering: true,   
-        order: [[4, 'desc']],
+        order: [], 
         dom: '<"top"il>rt<"bottom"p><"clear">', 
         language: {
             "processing":   "處理中...",
@@ -651,17 +796,7 @@
             { data: 'caseNo', title: '案件編號', width: '120px' },
             { data: 'status', title: '申請狀態', width: '120px' },
             { data: 'history', title: '打卡歷程', width: '110px' },
-            { 
-                data: 'checkInDate', 
-                title: '打卡記錄日', 
-                width: '120px',
-                render: function(data, type, row) {
-                    if (type === 'sort' || type === 'type') {
-                        return row.checkInDateRaw || '';
-                    }
-                    return data;
-                }
-            },
+            { data: 'checkInDate', title: '打卡記錄日', width: '120px' },
             { data: 'design', title: '設計圖', width: '90px' },
             { data: 'caseType', title: '案件類型', width: '120px' },
             { data: 'purpose', title: '施工目的', width: '150px' },
@@ -692,6 +827,10 @@
               row.child(formatChildRow(row.data())).show();
               tr.addClass('shown');
           }
+      });
+      $('#detail-table tbody').on('click', '[data-action="save-note"]', function (event) {
+          event.preventDefault();
+          saveManualNote(this.dataset.caseNo);
       });
     }
 
@@ -763,12 +902,23 @@
       document.getElementById('m-completed').innerText = compCount.toLocaleString();
       document.getElementById('m-error').innerText = errCount.toLocaleString();
 
+      let woIncompleteCount = 0, woCompleteCount = 0;
+      globalData.forEach(d => {
+        const wos = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        if (wos.length > 0) {
+          if (wos.some(wo => !(wo.status || '').includes('已完工'))) woIncompleteCount++;
+          else woCompleteCount++;
+        }
+      });
+
       const alertEl = document.getElementById('filter-alert-btns');
       alertEl.innerHTML = `
           <button class="filter-btn active" data-alert="all">全部案件</button>
           <button class="filter-btn" data-alert="overdue" style="color:var(--color-text-danger);">❌ 已逾期 (${ovdCount})</button>
           <button class="filter-btn" data-alert="expiringSoon" style="color:#d97a0d;">⚠️ 即將逾期 (${expCount})</button>
           <button class="filter-btn" data-alert="normal">✅ 狀態正常 (${normCount})</button>
+          <button class="filter-btn" data-alert="woIncomplete" style="color:var(--color-text-danger);">🚨 工作單未完工 (${woIncompleteCount})</button>
+          <button class="filter-btn" data-alert="woCompleted" style="color:#d97a0d;">🟡 工作單已完工 (${woCompleteCount})</button>
       `;
 
       const typeMap = {}; globalData.forEach(d => { typeMap[d.caseType] = (typeMap[d.caseType] || 0) + 1; });
@@ -778,13 +928,13 @@
       const conMap = {}; globalData.forEach(d => { conMap[d.contractor] = (conMap[d.contractor] || 0) + 1; });
       const conSorted = Object.entries(conMap).sort((a, b) => b[1] - a[1]);
       const conBarsEl = document.getElementById('contractor-bars'); 
-      conBarsEl.innerHTML = '';
       conBarsEl.style.display = 'grid'; conBarsEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))'; conBarsEl.style.gap = '8px';
       const maxCon = conSorted[0] ? conSorted[0][1] : 1;
-      conSorted.forEach(([name, count]) => {
+      conBarsEl.innerHTML = conSorted.map(([name, count]) => {
         const pct = (count / maxCon) * 100;
-        conBarsEl.innerHTML += `<div class="bar-row" data-contractor="${name}" style="background:var(--color-background-secondary); padding: 8px; border-radius:6px; border:1px solid var(--color-border-secondary); width:100%;"><span class="bar-label" style="width:100px;">${name}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#7F77DD"></div></div><span class="bar-count">${count} 件</span></div>`;
-      });
+        const safeName = escapeHtml(name);
+        return `<div class="bar-row" data-contractor="${safeName}" style="background:var(--color-background-secondary); padding: 8px; border-radius:6px; border:1px solid var(--color-border-secondary); width:100%;"><span class="bar-label" style="width:100px;">${safeName}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#7F77DD"></div></div><span class="bar-count">${count} 件</span></div>`;
+      }).join('');
 
       // 產生所有年份的選單 (供全域篩選與圖表獨立篩選用)
       const yearMap = {}; globalData.forEach(d => { yearMap[d.year] = (yearMap[d.year] || 0) + 1; });
@@ -792,12 +942,9 @@
 
       // 🚀 綁定路權單位卡片的下拉選單
       const authYearSelect = document.getElementById('local-auth-year');
-      authYearSelect.innerHTML = '<option value="all">歷年總計</option>';
-      yearSorted.forEach(([y, count]) => {
-          if (y !== '未知') {
-              authYearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
-          }
-      });
+      authYearSelect.innerHTML = '<option value="all">歷年總計</option>' + yearSorted
+        .filter(([y]) => y !== '未知')
+        .map(([y]) => `<option value="${escapeHtml(y)}">${escapeHtml(y)}年</option>`).join('');
       // 初始化呼叫繪製路權單位圖表
       updateAuthChart();
 
@@ -827,25 +974,29 @@
     }
 
     function renderBars(elementId, dataSorted, color, dataSetKey) {
-        const el = document.getElementById(elementId); el.innerHTML = '';
+        const el = document.getElementById(elementId);
         const max = dataSorted[0] ? dataSorted[0][1] : 1;
-        dataSorted.forEach(([name, count]) => {
+        el.innerHTML = dataSorted.map(([name, count]) => {
           const pct = (count / max) * 100;
-          el.innerHTML += `<div class="bar-row" data-${dataSetKey}="${name}"><span class="bar-label" title="${name}">${name}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-count">${count}</span></div>`;
-        });
+          const safeName = escapeHtml(name);
+          return `<div class="bar-row" data-${dataSetKey}="${safeName}"><span class="bar-label" title="${safeName}">${safeName}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-count">${count}</span></div>`;
+        }).join('');
     }
 
     function generateFilterButtons(elementId, dataSorted, dataSetKey, allText) {
-        const el = document.getElementById(elementId); el.innerHTML = '';
-        el.innerHTML += `<button class="filter-btn active" data-${dataSetKey}="all">${allText}</button>`;
-        dataSorted.forEach(([name, count]) => {
+        const el = document.getElementById(elementId);
+        const buttons = dataSorted.map(([name, count]) => {
             let label = dataSetKey === 'year' && name !== '未知' ? `${name}年 (${count})` : `${name} (${count})`;
-            el.innerHTML += `<button class="filter-btn" data-${dataSetKey}="${name}">${label}</button>`;
+            return `<button class="filter-btn" data-${dataSetKey}="${escapeHtml(name)}">${escapeHtml(label)}</button>`;
         });
+        el.innerHTML = `<button class="filter-btn active" data-${dataSetKey}="all">${escapeHtml(allText)}</button>${buttons.join('')}`;
     }
 
     function setupFilterControlLogic() {
-      document.getElementById('btn-export-excel').addEventListener('click', exportFilteredTableToExcel);
+      if (filtersBound) return;
+      filtersBound = true;
+      document.getElementById('btn-export-excel-summary').addEventListener('click', exportFilteredTableToExcelSummary);
+      document.getElementById('btn-export-excel-detail').addEventListener('click', exportFilteredTableToExcelDetail);
 
       // 🚀 監聽獨立年度下拉選單
       document.getElementById('local-auth-year').addEventListener('change', updateAuthChart);
@@ -859,8 +1010,12 @@
       });
 
       document.getElementById('txt-search').addEventListener('input', e => {
-        textSearchQuery = e.target.value.toLowerCase().trim();
-        renderTable();
+        clearTimeout(searchDebounceTimer);
+        const value = e.target.value;
+        searchDebounceTimer = setTimeout(() => {
+          textSearchQuery = value.toLowerCase().trim();
+          renderTable();
+        }, 200);
       });
 
       const bindFilterClick = (containerId, dataKey, setObj) => {
@@ -943,15 +1098,24 @@
       syncFilterUIStyles();
 
       currentFilteredData = globalData.filter(d => {
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        const woSearchText = workOrders.map(w => `${w.id} ${w.engNo} ${w.status} ${w.loc} ${w.rd1Note} ${w.pcdNote}`).join(' ');
         const hasManualNoteText = (d.manualNote && String(d.manualNote).trim() !== "") ? "已備註 有備註" : "";
         const matchesText = (textSearchQuery === '') ||
           Object.values(d).some(v => String(v).toLowerCase().includes(textSearchQuery)) ||
+          woSearchText.toLowerCase().includes(textSearchQuery) ||
           hasManualNoteText.includes(textSearchQuery);
+
+        const hasWorkOrders = workOrders.length > 0;
+        const isWoIncomplete = hasWorkOrders && workOrders.some(wo => !(wo.status || '').includes('已完工'));
+        const isWoCompleted = hasWorkOrders && !workOrders.some(wo => !(wo.status || '').includes('已完工'));
 
         const matchesAlert = (selectedAlerts.size === 0) ||
           (selectedAlerts.has('overdue') && d.isOverdue) ||
           (selectedAlerts.has('expiringSoon') && d.isExpiringSoon) ||
-          (selectedAlerts.has('normal') && !d.isOverdue && !d.isExpiringSoon);
+          (selectedAlerts.has('normal') && !d.isOverdue && !d.isExpiringSoon) ||
+          (selectedAlerts.has('woIncomplete') && isWoIncomplete) ||
+          (selectedAlerts.has('woCompleted') && isWoCompleted);
 
         const matchesYear = (selectedYears.size === 0) || selectedYears.has(d.year);
         const matchesType = (selectedTypes.size === 0) || selectedTypes.has(d.caseType);
@@ -964,10 +1128,23 @@
         return matchesText && matchesAlert && matchesYear && matchesType && matchesPurpose && matchesContractor && matchesAuth && matchesApplicant && matchesStatus;
       });
 
+      // 🚀 預設依「打卡紀錄日」遞減排序 (有打卡紀錄日者排在最前面，無打卡紀錄者排在後面)
+      currentFilteredData.sort((a, b) => {
+        const aDetails = globalDetailData[a.caseNo] || [];
+        const bDetails = globalDetailData[b.caseNo] || [];
+        const aDate = (aDetails.length > 0 && aDetails[0].recordDate) ? aDetails[0].recordDate : '';
+        const bDate = (bDetails.length > 0 && bDetails[0].recordDate) ? bDetails[0].recordDate : '';
+        
+        if (aDate && bDate) return bDate.localeCompare(aDate);
+        if (aDate && !bDate) return -1;
+        if (!aDate && bDate) return 1;
+        return 0;
+      });
+
       document.getElementById('filter-count').innerText = `${currentFilteredData.length.toLocaleString()} 件`;
 
       const mappedData = currentFilteredData.map(d => {
-        let permitEndHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${d.permitEnd || ''}</span>`;
+        let permitEndHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitEnd || '')}</span>`;
         if (d.isOverdue) {
             permitEndHtml += `<br><span style="font-size:11px; font-weight:bold; color:#fff; background:var(--color-text-danger); padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px;">❌ 已逾期</span>`;
         } else if (d.isExpiringSoon) {
@@ -984,20 +1161,18 @@
         }
 
         let latestRecordDateHtml = '';
-        let latestRecordDateRaw = '';
         if (details.length > 0 && details[0].recordDate) {
-            latestRecordDateHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-primary); font-weight:500;">${details[0].recordDate}</span>`;
-            latestRecordDateRaw = details[0].recordDate;
+            latestRecordDateHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-primary); font-weight:500;">${escapeHtml(details[0].recordDate)}</span>`;
         } else {
             latestRecordDateHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無紀錄</span>`;
-            latestRecordDateRaw = '';
         }
 
         // 解析地點與設計圖 (來自主檔)
         const parsedLoc = parseHyperlink(d.locMap);
-        let locationHtml = `<span style="font-size:13px;color:var(--color-text-primary);" title="${d.location || ''}">${d.location || ''}</span>`;
-        if (parsedLoc.url) {
-            locationHtml += ` <a href="${parsedLoc.url}" target="_blank" style="text-decoration:none; margin-left:6px;" title="查看地圖">🗺️</a>`;
+        let locationHtml = `<span style="font-size:13px;color:var(--color-text-primary);" title="${escapeHtml(d.location || '')}">${escapeHtml(d.location || '')}</span>`;
+        const safeMapUrl = safeUrl(parsedLoc.url);
+        if (safeMapUrl) {
+            locationHtml += ` <a href="${escapeHtml(safeMapUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; margin-left:6px;" title="查看地圖">🗺️</a>`;
         }
 
         const parsedDesign = parseHyperlink(d.design);
@@ -1010,36 +1185,55 @@
         }
 
         let designHtml = '';
+        designUrl = safeUrl(designUrl);
         if (designUrl) {
-            designHtml = `<a href="${designUrl}" target="_blank" style="text-decoration:none;"><span class="tag" style="background:#e3f2fd; color:#0b66c2; border:1px solid #bbdefb;">📐 查看設計圖</span></a>`;
+            designHtml = `<a href="${escapeHtml(designUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e3f2fd; color:#0b66c2; border:1px solid #bbdefb;">📐 查看設計圖</span></a>`;
         } else {
             designHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無</span>`;
         }
 
+        // 關聯工作單明細顏色高亮
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        let caseNoStyle = 'font-family:monospace;font-size:14px;font-weight:700;color:var(--color-text-info);';
+        let caseNoTitle = '';
+
+        if (workOrders.length > 0) {
+            // 只要有任意一筆工作單的回報狀態「不是已完工」（如未完工、未回報、施工中等），即顯示淡紅色警示底色；全數為已完工時才顯示黃色底色
+            const hasIncomplete = workOrders.some(wo => !(wo.status || '').includes('已完工'));
+            if (hasIncomplete) {
+                // 有非「已完工」的工作單：改用淡紅色警示底色 (顯眼區分)
+                caseNoStyle += ' background:#ffebee; color:#c5221f; padding:3px 6px; border-radius:4px; border:1px solid #ffcdd2;';
+                caseNoTitle = `關聯工作單含有未完工/未完成項目 (共 ${workOrders.length} 筆)`;
+            } else {
+                // 所有工作單皆為「已完工」：顯示黃色底色
+                caseNoStyle += ' background:#fff8e1; color:#b78103; padding:3px 6px; border-radius:4px; border:1px solid #ffe082;';
+                caseNoTitle = `關聯工作單已全數完工 (共 ${workOrders.length} 筆)`;
+            }
+        }
+
         return {
           caseNoRaw: d.caseNo, // 🚀 原始案件編號 (供 formatChildRow 使用)
-          caseNo: `<a href="https://pwd.yunlin.gov.tw/YLPipe/CaseState?AppNo=${d.caseNo || ''}" target="_blank" style="text-decoration:none;"><span style="font-family:monospace;font-size:14px;font-weight:600;color:var(--color-text-info);">${d.caseNo || ''}</span></a>`,
+          caseNo: `<span style="${caseNoStyle}" title="${escapeHtml(caseNoTitle)}">${escapeHtml(d.caseNo || '')}</span>`,
           status: `<div style="text-align:center;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue)}</div>`,
           history: historyHtml,
           checkInDate: latestRecordDateHtml,
-          checkInDateRaw: latestRecordDateRaw,
           design: designHtml,
-          caseType: `<span style="font-size:13px;">${d.caseType || ''}</span>`,
-          purpose: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${d.purpose || ''}">${d.purpose || ''}</span>`,
-          authUnit: `<span style="font-size:13px; font-weight:500;">${d.authUnit || ''}</span>`,
-          contractor: `<span style="font-size:13px; font-weight:500; color:#5e6c84">${d.contractor || ''}</span>`,
-          applicant: `<span style="font-size:13px;">${d.applicant || ''}</span>`,
-          permitStart: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${d.permitStart || ''}</span>`,
+          caseType: `<span style="font-size:13px;">${escapeHtml(d.caseType || '')}</span>`,
+          purpose: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${escapeHtml(d.purpose || '')}">${escapeHtml(d.purpose || '')}</span>`,
+          authUnit: `<span style="font-size:13px; font-weight:500;">${escapeHtml(d.authUnit || '')}</span>`,
+          contractor: `<span style="font-size:13px; font-weight:500; color:#5e6c84">${escapeHtml(d.contractor || '')}</span>`,
+          applicant: `<span style="font-size:13px;">${escapeHtml(d.applicant || '')}</span>`,
+          permitStart: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitStart || '')}</span>`,
           permitEnd: permitEndHtml, 
-          compReqDate: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${d.compReqDate || ''}</span>`,
+          compReqDate: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.compReqDate || '')}</span>`,
           location: locationHtml,
-          supervisor: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${d.supervisor || ''}">${d.supervisor || ''}</span>`,
-          note: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${d.note || ''}">${d.note || ''}</span>`,
-          note1: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${d.note1 || ''}">${d.note1 || ''}</span>`,
+          supervisor: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.supervisor || '')}">${escapeHtml(d.supervisor || '')}</span>`,
+          note: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note || '')}">${escapeHtml(d.note || '')}</span>`,
+          note1: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note1 || '')}">${escapeHtml(d.note1 || '')}</span>`,
           manualNote: `
             <div style="display:flex; align-items:center;">
-              <input type="text" id="note-${d.caseNo}" class="note-input" value="${d.manualNote || ''}" placeholder="點擊鍵入備註...">
-              <button id="save-btn-${d.caseNo}" class="note-save-btn" onclick="saveManualNote('${d.caseNo}')">儲存</button>
+              <input type="text" id="note-${escapeHtml(d.caseNo)}" class="note-input" value="${escapeHtml(d.manualNote || '')}" placeholder="點擊鍵入備註...">
+              <button id="save-btn-${escapeHtml(d.caseNo)}" class="note-save-btn" data-action="save-note" data-case-no="${escapeHtml(d.caseNo)}">儲存</button>
             </div>
           `
         };
@@ -1065,19 +1259,23 @@
       return tagHtml;
     }
 
-    function exportFilteredTableToExcel() {
+    // 🚀 方式一：原本的「案件總覽」Excel 匯出 (同一案件之工作單單一儲存格合併呈現)
+    function exportFilteredTableToExcelSummary() {
       if (!currentFilteredData || currentFilteredData.length === 0) { 
         alert("目前沒有任何數據可以導出！"); 
         return; 
       }
       
-      const headers = ["案件編號", "申請狀態", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
+      const headers = ["案件編號", "申請狀態", "關聯工作單數", "關聯工作單號", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
       const dataAOA = [headers];
 
       currentFilteredData.forEach(d => {
         let exportStatus = d.status;
         if (d.isOverdue) exportStatus += ' [❌已逾期]';
         else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
+
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        const woIds = workOrders.map(w => w.id || w.engNo).join(', ');
 
         const details = globalDetailData[d.caseNo] || [];
         const latest = details[0] || {};
@@ -1094,7 +1292,7 @@
         const parsedLoc = parseHyperlink(d.locMap);
 
         const rowData = [
-          d.caseNo, exportStatus, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
+          d.caseNo, exportStatus, workOrders.length, woIds, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
           d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
           d.permitStart, d.permitEnd, d.compReqDate, d.location, parsedLoc.url,
           d.supervisor, d.note, d.note1, d.manualNote
@@ -1106,19 +1304,108 @@
       const yyyy = today.getFullYear(); 
       const mm = String(today.getMonth() + 1).padStart(2, '0'); 
       const dd = String(today.getDate()).padStart(2, '0');
-      const filename = `路權挖掘案件_報表_${yyyy}${mm}${dd}.xlsx`;
+      const filename = `路權挖掘案件_案件總覽報表_${yyyy}${mm}${dd}.xlsx`;
 
       try {
         const ws = XLSX.utils.aoa_to_sheet(dataAOA);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "案件列表");
+        XLSX.utils.book_append_sheet(wb, ws, "案件總覽");
         XLSX.writeFile(wb, filename);
       } catch (err) {
         alert("匯出 Excel 時發生錯誤：" + err.message);
       }
     }
 
-    window.addEventListener('DOMContentLoaded', initSecureConnection);
+    // 🚀 方式二：全新的「工作單拆列明細」Excel 匯出 (依路權編號與工作單流水號排序，每筆工作單獨立展開一列)
+    function exportFilteredTableToExcelDetail() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { 
+        alert("目前沒有任何數據可以導出！"); 
+        return; 
+      }
+      
+      const headers = [
+        "案件編號", "申請狀態", 
+        "工作單流水號", "工程編號", "回報狀態", "施工地點", "PCD施工備註", "關聯工作單數", 
+        "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", 
+        "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", 
+        "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", 
+        "監工資訊", "備註", "備註1", "手動備註"
+      ];
+      const dataAOA = [headers];
+
+      // 依路權編號 (案件編號) 排序
+      const sortedData = [...currentFilteredData].sort((a, b) => (a.caseNo || '').localeCompare(b.caseNo || ''));
+
+      sortedData.forEach(d => {
+        let exportStatus = d.status;
+        if (d.isOverdue) exportStatus += ' [❌已逾期]';
+        else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
+
+        const rawWorkOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        // 依工作單流水號/工程編號排序
+        const workOrders = [...rawWorkOrders].sort((a, b) => {
+          const aId = a.id || a.engNo || '';
+          const bId = b.id || b.engNo || '';
+          return aId.localeCompare(bId);
+        });
+
+        const details = globalDetailData[d.caseNo] || [];
+        const latest = details[0] || {};
+        const parsedIn = parseHyperlink(latest.checkIn || '');
+        const parsedOut = parseHyperlink(latest.checkOut || '');
+        const parsedDesign = parseHyperlink(d.design);
+        let designUrl = parsedDesign.url;
+        if (!designUrl && d.design && (d.design.startsWith('http://') || d.design.startsWith('https://'))) {
+            designUrl = d.design;
+        }
+        if (!designUrl && d.caseNo) {
+            designUrl = `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+        }
+        const parsedLoc = parseHyperlink(d.locMap);
+
+        const baseCaseData = [
+          details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
+          d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
+          d.permitStart, d.permitEnd, d.compReqDate, d.location, parsedLoc.url,
+          d.supervisor, d.note, d.note1, d.manualNote
+        ];
+
+        if (workOrders.length > 0) {
+          workOrders.forEach(wo => {
+            const rowData = [
+              d.caseNo, exportStatus,
+              wo.id || '', wo.engNo || '', wo.status || '', wo.loc || '', wo.pcdNote || '', workOrders.length,
+              ...baseCaseData
+            ];
+            dataAOA.push(rowData);
+          });
+        } else {
+          const rowData = [
+            d.caseNo, exportStatus,
+            '', '', '', '', '', 0,
+            ...baseCaseData
+          ];
+          dataAOA.push(rowData);
+        }
+      });
+
+      const today = new Date(); 
+      const yyyy = today.getFullYear(); 
+      const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+      const dd = String(today.getDate()).padStart(2, '0');
+      const filename = `路權挖掘案件_工作單拆列明細報表_${yyyy}${mm}${dd}.xlsx`;
+
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(dataAOA);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "工作單明細");
+        XLSX.writeFile(wb, filename);
+      } catch (err) {
+        alert("匯出 Excel 時發生錯誤：" + err.message);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', fetchCloudSheetsData);
   </script>
 </body>
 </html>
