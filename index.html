@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="zh-TW" data-immersive-translate-page-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>路權挖掘案件管理_v5.1 </title>
+  <title>路權挖掘案件管理_v5.2</title>
   
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css">
@@ -16,12 +17,14 @@
       --color-background-warning: #fff3e0;
       --color-background-danger: #ffebee;
       --color-background-success: #e8f5e9;
+      --color-background-purple: #f3e5f5;
       --color-text-primary: #172b4d;
       --color-text-secondary: #5e6c84;
       --color-text-tertiary: #8993a4;
       --color-text-info: #0b66c2;
       --color-text-danger: #c5221f;
       --color-text-success: #1e8e3e;
+      --color-text-purple: #7b1fa2;
       --color-border-primary: rgba(9, 30, 66, 0.13);
       --color-border-secondary: rgba(9, 30, 66, 0.08);
       --color-border-tertiary: rgba(9, 30, 66, 0.04);
@@ -47,7 +50,6 @@
     .metric:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .metric-label { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 6px; font-weight: 500; }
     .metric-value { font-size: 28px; font-weight: 700; margin: 0; color: var(--color-text-primary); letter-spacing: -1px;}
-    .metric-sub { font-size: 12px; color: var(--color-text-tertiary); margin: 4px 0 0; }
     
     .card { background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); }
     .card-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
@@ -64,7 +66,7 @@
 
     .bar-label { width: 140px; min-width: 140px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;}
     .bar-track { flex: 1; background: var(--color-background-secondary); border-radius: 6px; height: 12px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s cubic-bezier(0.4, 0.2, 1); }
     .bar-count { width: 55px; text-align: right; color: var(--color-text-primary); font-weight: 600; }
     
     .tag { display: inline-block; font-size: 12px; padding: 4px 8px; border-radius: var(--border-radius-md); font-weight: 600; white-space: nowrap; letter-spacing: 0.2px;}
@@ -83,7 +85,6 @@
     .note-input { width: 130px; height: 28px; font-size: 13px; padding: 4px 8px; border: 1px solid var(--color-border-secondary); border-radius: 4px; }
     .note-save-btn { font-size: 12px; font-weight: 600; padding: 5px 10px; background: var(--color-background-info); color: var(--color-text-info); border: none; border-radius: 4px; cursor: pointer; margin-left: 6px; }
 
-    /* --- DataTables 客製化樣式 --- */
     .table-container { background: var(--color-background-primary); border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); padding: 10px; box-shadow: var(--shadow-sm); }
     table.dataTable thead th { border-bottom: 2px solid var(--color-border-secondary) !important; background: var(--color-background-secondary); font-size: 14px; font-weight: 600; color: var(--color-text-secondary); white-space: nowrap; cursor: pointer;}
     table.dataTable tbody td { border-bottom: 1px solid var(--color-border-tertiary) !important; padding: 10px 8px; white-space: nowrap; vertical-align: middle; }
@@ -100,11 +101,9 @@
     .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
     
-    /* 下拉選單樣式 */
     .local-select { font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); color:var(--color-text-primary); cursor:pointer; outline:none; box-shadow: var(--shadow-sm);}
     .local-select:hover { border-color: var(--color-text-info); }
 
-    /* 🚀 歷史明細子列展合控制圖示與外連按鈕 */
     table.dataTable tbody td.dt-control {
       text-align: center;
       cursor: pointer;
@@ -141,7 +140,7 @@
 <body>
 
   <div class="db-header">
-    <h1>路權挖掘申請案件管理儀表板 <span style="font-size:14px; color:var(--color-text-info); background:var(--color-background-info); padding:4px 8px; border-radius:12px;">v5.1</span></h1>
+    <h1>路權挖掘申請案件管理儀表板 <span style="font-size:14px; color:var(--color-text-info); background:var(--color-background-info); padding:4px 8px; border-radius:12px;">v5.2</span></h1>
     <p>智慧動態解析與多維度分析 </p>
   </div>
 
@@ -198,9 +197,9 @@
     </div>
     
     <div class="filter-section-title">🔍 智慧手動輸入篩選器：</div>
-    <input type="text" id="txt-search" class="search-input-box" placeholder="輸入案件編號、廠商、地點、狀態... (支援輸入「有備註」)">
+    <input type="text" id="txt-search" class="search-input-box" placeholder="輸入案件編號、廠商、地點、狀態... (支援輸入「有備註」或「展延」)">
 
-    <div class="filter-section-title">🚨 異常警示篩選：</div>
+    <div class="filter-section-title">🚨 異常與狀態警示篩選：</div>
     <div class="filter-row" id="filter-alert-btns"></div>
 
     <div class="filter-section-title">📅 年份篩選 (依案件編號前三碼)：</div>
@@ -238,9 +237,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <script>
-    // ==========================================
-    // 🛠️ GOOGLE SHEETS API V4 設定
-    // ==========================================
     const CONFIG = {
       MASTER_SPREADSHEET_ID: "1d84D9IYuJIdyXwIicYCGFb9TKp9ar9h4xfl5A4Nq2b0", 
       MASTER_RANGE: "工作表1!A:ZZ",
@@ -251,10 +247,9 @@
       API_KEY: "AIzaSyA8Ok4r6-w8Ggii57gjPafEROlninDL6sg"
     };
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8J8wBMI4feKyITveSOTNfTUz0jNimhB2TmxXR0KnLGw458FenqFYDMqY3p2fmIR2_sA/exec";
-    // ==========================================
 
     let globalData = [];
-    let globalWorkOrdersByRoadCaseNo = {}; // key: 路權案件編號 -> array of work orders
+    let globalWorkOrdersByRoadCaseNo = {};
     let currentFilteredData = [];   
     let selectedAlerts = new Set(); 
     let selectedYears = new Set();  
@@ -317,7 +312,6 @@
       return isNaN(fb.getTime()) ? null : fb;
     }
 
-    // 🚀 解析 Google Sheets 的 HYPERLINK 公式以還原連結與標籤值
     function parseHyperlink(formula) {
       if (!formula) return { url: '', label: '' };
       const str = String(formula).trim();
@@ -328,7 +322,6 @@
       return { url: '', label: str };
     }
 
-    // 🚀 將 Google Sheets Date 序號數字轉換成民國年日期格式
     function formatGoogleSerialDate(serial) {
       const num = Number(serial);
       if (isNaN(num)) return String(serial).trim();
@@ -352,7 +345,6 @@
       return `${paddedYear}年${paddedMonth}月${paddedDay}日`;
     }
 
-    // 🚀 清洗並解碼日期欄位值
     function cleanDateVal(val) {
       if (!val) return '';
       let str = String(val).trim();
@@ -365,7 +357,6 @@
       return str;
     }
 
-    // 🚀 從 RD1 備註文字中提取路權案件編號
     function extractRoadCaseNo(rd1Note) {
       if (!rd1Note) return null;
       const str = String(rd1Note).trim();
@@ -378,14 +369,12 @@
       return null;
     }
 
-    // 🚀 格式化子列明細與關聯工單 HTML
     function formatChildRow(d) {
         const details = globalDetailData[d.caseNoRaw] || [];
         const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNoRaw] || [];
         
         let html = `
           <div style="padding:15px; background:var(--color-background-secondary); border-radius:8px; border: 1px solid var(--color-border-primary); margin: 5px 10px; display:flex; flex-direction:column; gap:16px; align-items:flex-start;">
-            <!-- 🔗 系統快捷按鈕 -->
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--color-background-primary); padding:8px 12px; border-radius:6px; border:1px solid var(--color-border-tertiary); width: fit-content;">
               <span style="font-size:13px; font-weight:700; color:var(--color-text-primary);">快捷連結：</span>
               <a href="https://pwd.yunlin.gov.tw/YLPipe/CaseState?AppNo=${encodeURIComponent(d.caseNoRaw)}" target="_blank" rel="noopener noreferrer" class="road-link-pill">
@@ -397,7 +386,6 @@
             </div>
         `;
 
-        // --- 1. 關聯工作單明細表 (電信工程施工進度 Sheet: 1gLn5Tz-TcP8LELMNH6HxkLEa67DLWYX0Uhx4oNZvmIY) ---
         if (workOrders.length > 0) {
             html += `
                 <div style="max-width:100%;">
@@ -449,7 +437,6 @@
             html += `<div style="font-size:13px; color:var(--color-text-tertiary);">🔗 尚無關聯工作單資料。</div>`;
         }
 
-        // --- 2. 歷史打卡明細紀錄 ---
         if (details.length > 0) {
             html += `
                 <div style="max-width:100%;">
@@ -512,7 +499,7 @@
         return html;
     }
 
-    let globalDetailData = {}; // 儲存案件打卡歷史明細
+    let globalDetailData = {};
 
     async function fetchCloudSheetsData() {
       const password = prompt("🔐 請輸入網頁瀏覽密碼：");
@@ -533,7 +520,6 @@
       const workOrdersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.WORK_ORDERS_SPREADSHEET_ID}/values/${encodeURIComponent(CONFIG.WORK_ORDERS_RANGE)}?key=${CONFIG.API_KEY}`;
 
       try {
-        // 同時抓取主檔、打卡明細檔與工作單檔
         const [masterRes, detailRes, workOrdersRes] = await Promise.all([
             fetch(masterUrl).then(r => r.json()),
             fetch(detailUrl).then(r => r.json()),
@@ -544,7 +530,7 @@
         if (detailRes.error) throw new Error("明細檔讀取失敗: " + detailRes.error.message);
         if (workOrdersRes.error) throw new Error("工作單試算表讀取失敗: " + workOrdersRes.error.message);
 
-        // --- 0. 解析工作單 (Work Orders Sheet: 1gLn5Tz-TcP8LELMNH6HxkLEa67DLWYX0Uhx4oNZvmIY) ---
+        // --- 0. 解析工作單 ---
         const woValues = workOrdersRes.values || [];
         globalWorkOrdersByRoadCaseNo = {};
         if (woValues.length > 1) {
@@ -592,7 +578,7 @@
             });
         }
 
-        // --- 1. 解析明細檔 (Detail Sheet) ---
+        // --- 1. 解析明細檔 ---
         const detailValues = detailRes.values || [];
         globalDetailData = {};
         if (detailValues.length > 1) {
@@ -640,13 +626,12 @@
                 });
             });
 
-            // 對每個案件的打卡紀錄依照「打卡紀錄日」降序排序 (最新在最上面)
             for (let cNo in globalDetailData) {
                 globalDetailData[cNo].sort((a, b) => b.recordDate.localeCompare(a.recordDate));
             }
         }
 
-        // --- 2. 解析主檔 (Master Sheet) ---
+        // --- 2. 解析主檔 ---
         const masterValues = masterRes.values || [];
         if (masterValues.length === 0) throw new Error("主檔試算表內無任何資料。");
 
@@ -682,6 +667,7 @@
         const idxManualNote = getColIdx(headers, ['手動備註']);
         const idxLocMap = getColIdx(headers, ['地點']);
         const idxDesign = getColIdx(headers, ['設計圖連結']);
+        const idxHasExt = getColIdx(headers, ['曾展延', '是否展延', '展延']);
 
         const todayDate = new Date();
         todayDate.setHours(0, 0, 0, 0); 
@@ -690,7 +676,6 @@
         globalData = rows.map(row => {
           const getCell = (idx) => (idx !== -1 && idx < row.length && row[idx] !== undefined) ? String(row[idx]).trim() : '';
           
-          // 🚀 清洗公式型欄位為純文字值，以防公式字串干擾搜尋或標籤顯示
           const getCleanCell = (idx) => {
               const val = getCell(idx);
               if (val.startsWith("=")) {
@@ -710,6 +695,22 @@
           if (note1 === 'NaN' || note1 === 'null') note1 = '';
 
           let year = (caseNo && caseNo.length >= 3) ? caseNo.substring(0, 3) : '未知';
+          
+          // 🚀【解析「是+次數」邏輯】：支援「是1」、「是2」、「是」、「展延(2次)」等
+          let rawExt = getCleanCell(idxHasExt);
+          let hasExtension = false;
+          let extCount = 0;
+
+          if (rawExt && rawExt !== "否" && rawExt !== "false") {
+              const numMatch = rawExt.match(/\d+/);
+              if (numMatch) {
+                  extCount = parseInt(numMatch[0], 10);
+                  hasExtension = extCount > 0;
+              } else if (rawExt.includes("是") || rawExt.includes("展") || rawExt.toLowerCase() === "true") {
+                  hasExtension = true;
+                  extCount = 1;
+              }
+          }
 
           let isExpiringSoon = false;
           let isOverdue = false;
@@ -741,6 +742,9 @@
             permitEnd: permitEndVal,
             compReqDate: cleanDateVal(getCell(idxCompReqDate)),
             manualNote: getCleanCell(idxManualNote),
+            hasExtension: hasExtension,
+            extCount: extCount, // 🚀 綁定展延次數
+            rawExtText: rawExt || (hasExtension ? `是${extCount}` : '否'),
             isExpiringSoon: isExpiringSoon, 
             isOverdue: isOverdue,
             isCompletedOrCanceled: isCompletedOrCanceled,
@@ -749,7 +753,6 @@
           };
         }).filter(d => {
           if (!d.caseNo) return false;
-          // 🚀 依民國年份剔除距今2年(含)以上已完工/已結案/已註銷/退件的舊案件 (例: 今年115年，剔除 113年及以前已結案的案件)
           const caseRocYear = parseInt(d.year, 10);
           if (!isNaN(caseRocYear) && d.isCompletedOrCanceled && caseRocYear <= (currentRocYear - 2)) {
             return false;
@@ -794,7 +797,7 @@
                 width: '30px'
             },
             { data: 'caseNo', title: '案件編號', width: '120px' },
-            { data: 'status', title: '申請狀態', width: '120px' },
+            { data: 'status', title: '申請狀態', width: '150px' },
             { data: 'history', title: '打卡歷程', width: '110px' },
             { data: 'checkInDate', title: '打卡記錄日', width: '120px' },
             { data: 'design', title: '設計圖', width: '90px' },
@@ -815,7 +818,6 @@
 
       setupColumnToggle();
 
-      // 🚀 綁定點擊展合明細歷史紀錄事件
       $('#detail-table tbody').on('click', 'td.dt-control', function () {
           var tr = $(this).closest('tr');
           var row = dataTableInstance.row(tr);
@@ -844,7 +846,6 @@
         let col = dataTableInstance.column(i);
         let title = col.header().textContent.trim().replace('📝 ', ''); 
         
-        // 🚀 跳過展合控制列
         if (!title) continue;
         
         let btn = document.createElement('button');
@@ -862,7 +863,6 @@
       }
     }
 
-    // 🚀 新增：負責更新路權單位圖表的獨立函數
     function updateAuthChart() {
       const selectedYear = document.getElementById('local-auth-year').value;
       
@@ -877,7 +877,7 @@
       const authSortedChart = authSortedFull.slice(0, 10);
       
       renderBars('auth-bars', authSortedChart, '#1e8e3e', 'auth');
-      syncFilterUIStyles(); // 確保重新繪製後，如果該單位剛好是被全域選中的，依舊會高亮
+      syncFilterUIStyles();
     }
 
     function calculateAndRenderDashboard() {
@@ -885,6 +885,7 @@
 
       let activeCount = 0, compCount = 0, errCount = 0;
       let expCount = 0, ovdCount = 0, normCount = 0; 
+      let extCount = 0;
 
       globalData.forEach(d => {
         const s = d.status;
@@ -895,6 +896,8 @@
         if (d.isOverdue) ovdCount++;
         else if (d.isExpiringSoon) expCount++;
         else normCount++;
+
+        if (d.hasExtension) extCount++;
       });
 
       document.getElementById('m-total').innerText = globalData.length.toLocaleString();
@@ -914,6 +917,7 @@
       const alertEl = document.getElementById('filter-alert-btns');
       alertEl.innerHTML = `
           <button class="filter-btn active" data-alert="all">全部案件</button>
+          <button class="filter-btn" data-alert="hasExtension" style="color:var(--color-text-purple); font-weight:600;">🔄 曾展延案件 (${extCount})</button>
           <button class="filter-btn" data-alert="overdue" style="color:var(--color-text-danger);">❌ 已逾期 (${ovdCount})</button>
           <button class="filter-btn" data-alert="expiringSoon" style="color:#d97a0d;">⚠️ 即將逾期 (${expCount})</button>
           <button class="filter-btn" data-alert="normal">✅ 狀態正常 (${normCount})</button>
@@ -936,16 +940,13 @@
         return `<div class="bar-row" data-contractor="${safeName}" style="background:var(--color-background-secondary); padding: 8px; border-radius:6px; border:1px solid var(--color-border-secondary); width:100%;"><span class="bar-label" style="width:100px;">${safeName}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#7F77DD"></div></div><span class="bar-count">${count} 件</span></div>`;
       }).join('');
 
-      // 產生所有年份的選單 (供全域篩選與圖表獨立篩選用)
       const yearMap = {}; globalData.forEach(d => { yearMap[d.year] = (yearMap[d.year] || 0) + 1; });
       const yearSorted = Object.entries(yearMap).sort((a, b) => b[0].localeCompare(a[0]));
 
-      // 🚀 綁定路權單位卡片的下拉選單
       const authYearSelect = document.getElementById('local-auth-year');
       authYearSelect.innerHTML = '<option value="all">歷年總計</option>' + yearSorted
         .filter(([y]) => y !== '未知')
         .map(([y]) => `<option value="${escapeHtml(y)}">${escapeHtml(y)}年</option>`).join('');
-      // 初始化呼叫繪製路權單位圖表
       updateAuthChart();
 
       const purposeMap = {}; globalData.forEach(d => { purposeMap[d.purpose] = (purposeMap[d.purpose] || 0) + 1; });
@@ -961,7 +962,6 @@
       generateFilterButtons('filter-type-btns', typeSorted, 'type', '全部類型');
       generateFilterButtons('filter-purpose-btns', purposeSorted, 'purpose', '全部目的'); 
       
-      // 全域篩選按鈕仍需顯示所有單位
       const allAuthMap = {}; globalData.forEach(d => { allAuthMap[d.authUnit] = (allAuthMap[d.authUnit] || 0) + 1; });
       const allAuthSorted = Object.entries(allAuthMap).sort((a, b) => b[1] - a[1]);
       generateFilterButtons('filter-auth-btns', allAuthSorted, 'auth', '全部單位');
@@ -998,7 +998,6 @@
       document.getElementById('btn-export-excel-summary').addEventListener('click', exportFilteredTableToExcelSummary);
       document.getElementById('btn-export-excel-detail').addEventListener('click', exportFilteredTableToExcelDetail);
 
-      // 🚀 監聽獨立年度下拉選單
       document.getElementById('local-auth-year').addEventListener('change', updateAuthChart);
 
       ['type', 'auth', 'contractor'].forEach(id => {
@@ -1101,16 +1100,20 @@
         const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
         const woSearchText = workOrders.map(w => `${w.id} ${w.engNo} ${w.status} ${w.loc} ${w.rd1Note} ${w.pcdNote}`).join(' ');
         const hasManualNoteText = (d.manualNote && String(d.manualNote).trim() !== "") ? "已備註 有備註" : "";
+        const extSearchText = d.hasExtension ? `曾展延 展 展延 是${d.extCount} 展${d.extCount}` : "";
+
         const matchesText = (textSearchQuery === '') ||
           Object.values(d).some(v => String(v).toLowerCase().includes(textSearchQuery)) ||
           woSearchText.toLowerCase().includes(textSearchQuery) ||
-          hasManualNoteText.includes(textSearchQuery);
+          hasManualNoteText.includes(textSearchQuery) ||
+          extSearchText.toLowerCase().includes(textSearchQuery);
 
         const hasWorkOrders = workOrders.length > 0;
         const isWoIncomplete = hasWorkOrders && workOrders.some(wo => !(wo.status || '').includes('已完工'));
         const isWoCompleted = hasWorkOrders && !workOrders.some(wo => !(wo.status || '').includes('已完工'));
 
         const matchesAlert = (selectedAlerts.size === 0) ||
+          (selectedAlerts.has('hasExtension') && d.hasExtension) ||
           (selectedAlerts.has('overdue') && d.isOverdue) ||
           (selectedAlerts.has('expiringSoon') && d.isExpiringSoon) ||
           (selectedAlerts.has('normal') && !d.isOverdue && !d.isExpiringSoon) ||
@@ -1128,7 +1131,6 @@
         return matchesText && matchesAlert && matchesYear && matchesType && matchesPurpose && matchesContractor && matchesAuth && matchesApplicant && matchesStatus;
       });
 
-      // 🚀 預設依「打卡紀錄日」遞減排序 (有打卡紀錄日者排在最前面，無打卡紀錄者排在後面)
       currentFilteredData.sort((a, b) => {
         const aDetails = globalDetailData[a.caseNo] || [];
         const bDetails = globalDetailData[b.caseNo] || [];
@@ -1151,7 +1153,6 @@
             permitEndHtml += `<br><span style="font-size:11px; font-weight:bold; color:#d97a0d; background:var(--color-background-warning); border:1px solid #ffd54f; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px;">⚠️ 即將逾期</span>`;
         }
 
-        // 歷史打卡明細資料
         const details = globalDetailData[d.caseNo] || [];
         let historyHtml = '';
         if (details.length > 0) {
@@ -1167,7 +1168,6 @@
             latestRecordDateHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無紀錄</span>`;
         }
 
-        // 解析地點與設計圖 (來自主檔)
         const parsedLoc = parseHyperlink(d.locMap);
         let locationHtml = `<span style="font-size:13px;color:var(--color-text-primary);" title="${escapeHtml(d.location || '')}">${escapeHtml(d.location || '')}</span>`;
         const safeMapUrl = safeUrl(parsedLoc.url);
@@ -1192,29 +1192,26 @@
             designHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無</span>`;
         }
 
-        // 關聯工作單明細顏色高亮
         const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
         let caseNoStyle = 'font-family:monospace;font-size:14px;font-weight:700;color:var(--color-text-info);';
         let caseNoTitle = '';
 
         if (workOrders.length > 0) {
-            // 只要有任意一筆工作單的回報狀態「不是已完工」（如未完工、未回報、施工中等），即顯示淡紅色警示底色；全數為已完工時才顯示黃色底色
             const hasIncomplete = workOrders.some(wo => !(wo.status || '').includes('已完工'));
             if (hasIncomplete) {
-                // 有非「已完工」的工作單：改用淡紅色警示底色 (顯眼區分)
                 caseNoStyle += ' background:#ffebee; color:#c5221f; padding:3px 6px; border-radius:4px; border:1px solid #ffcdd2;';
                 caseNoTitle = `關聯工作單含有未完工/未完成項目 (共 ${workOrders.length} 筆)`;
             } else {
-                // 所有工作單皆為「已完工」：顯示黃色底色
                 caseNoStyle += ' background:#fff8e1; color:#b78103; padding:3px 6px; border-radius:4px; border:1px solid #ffe082;';
                 caseNoTitle = `關聯工作單已全數完工 (共 ${workOrders.length} 筆)`;
             }
         }
 
         return {
-          caseNoRaw: d.caseNo, // 🚀 原始案件編號 (供 formatChildRow 使用)
+          caseNoRaw: d.caseNo,
           caseNo: `<span style="${caseNoStyle}" title="${escapeHtml(caseNoTitle)}">${escapeHtml(d.caseNo || '')}</span>`,
-          status: `<div style="text-align:center;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue)}</div>`,
+          // 🚀 傳入展延次數 d.extCount
+          status: `<div style="display:inline-flex; align-items:center; justify-content:flex-start; gap:4px; white-space:nowrap;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue, d.hasExtension, d.extCount)}</div>`,
           history: historyHtml,
           checkInDate: latestRecordDateHtml,
           design: designHtml,
@@ -1246,27 +1243,33 @@
       dataTableInstance.clear().rows.add(mappedData).draw();
     }
 
-    function statusTag(s, isExpiringSoon, isOverdue) {
+    // 🚀【動態展延標籤渲染】：展延 1 次顯示「展」，2次（含）以上顯示「展²」或數字標記
+    function statusTag(s, isExpiringSoon, isOverdue, hasExtension, extCount) {
       let tagHtml = '';
       if (s.includes('完工')) tagHtml = `<span class="tag" style="background:var(--color-background-success);color:var(--color-text-success); border: 1px solid var(--color-border-success)">${s}</span>`;
       else if (s.includes('退件') || s.includes('退回') || s.includes('停工') || s.includes('作廢')) tagHtml = `<span class="tag" style="background:var(--color-background-danger); color:var(--color-text-danger); border: 1px solid var(--color-text-danger)">${s}</span>`;
       else if (s.includes('發證') || s.includes('核准') || s.includes('同意') || s.includes('施工中')) tagHtml = `<span class="tag" style="background:var(--color-background-info); color:var(--color-text-info); border: 1px solid var(--color-text-info)">${s}</span>`;
       else tagHtml = `<span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary); border: 1px solid var(--color-border-secondary);">${s}</span>`;
       
-      // if (isOverdue) tagHtml += `<div style="margin-top:4px;"><span class="tag" style="background:var(--color-text-danger); color:#fff; font-size:10px; border:none;">❌ 逾期</span></div>`;
-      // else if (isExpiringSoon) tagHtml += `<div style="margin-top:4px;"><span class="tag" style="background:var(--color-background-warning); color:#d97a0d; border: 1px solid #ffd54f; font-size:10px;">⚠️ 逾期警告</span></div>`;
-      
+      if (hasExtension) {
+        const supMap = { 1: '', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+        let countText = '';
+        if (extCount && extCount > 1) {
+          countText = supMap[extCount] !== undefined ? supMap[extCount] : `(${extCount})`;
+        }
+        tagHtml += `<span class="tag" style="background:var(--color-background-purple); color:var(--color-text-purple); border: 1px solid #ce93d8; padding: 2px 6px; font-weight: 700;" title="本案申請展延共 ${extCount || 1} 次">展${countText}</span>`;
+      }
+
       return tagHtml;
     }
 
-    // 🚀 方式一：原本的「案件總覽」Excel 匯出 (同一案件之工作單單一儲存格合併呈現)
     function exportFilteredTableToExcelSummary() {
       if (!currentFilteredData || currentFilteredData.length === 0) { 
         alert("目前沒有任何數據可以導出！"); 
         return; 
       }
       
-      const headers = ["案件編號", "申請狀態", "關聯工作單數", "關聯工作單號", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
+      const headers = ["案件編號", "申請狀態", "展延次數", "關聯工作單數", "關聯工作單號", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
       const dataAOA = [headers];
 
       currentFilteredData.forEach(d => {
@@ -1292,7 +1295,7 @@
         const parsedLoc = parseHyperlink(d.locMap);
 
         const rowData = [
-          d.caseNo, exportStatus, workOrders.length, woIds, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
+          d.caseNo, exportStatus, d.extCount, workOrders.length, woIds, details.length, parsedIn.label, parsedOut.label, latest.recordDate || '', designUrl,
           d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
           d.permitStart, d.permitEnd, d.compReqDate, d.location, parsedLoc.url,
           d.supervisor, d.note, d.note1, d.manualNote
@@ -1316,7 +1319,6 @@
       }
     }
 
-    // 🚀 方式二：全新的「工作單拆列明細」Excel 匯出 (依路權編號與工作單流水號排序，每筆工作單獨立展開一列)
     function exportFilteredTableToExcelDetail() {
       if (!currentFilteredData || currentFilteredData.length === 0) { 
         alert("目前沒有任何數據可以導出！"); 
@@ -1324,7 +1326,7 @@
       }
       
       const headers = [
-        "案件編號", "申請狀態", 
+        "案件編號", "申請狀態",  "展延次數",
         "工作單流水號", "工程編號", "回報狀態", "施工地點", "PCD施工備註", "關聯工作單數", 
         "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", 
         "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", 
@@ -1333,7 +1335,6 @@
       ];
       const dataAOA = [headers];
 
-      // 依路權編號 (案件編號) 排序
       const sortedData = [...currentFilteredData].sort((a, b) => (a.caseNo || '').localeCompare(b.caseNo || ''));
 
       sortedData.forEach(d => {
@@ -1342,7 +1343,6 @@
         else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
 
         const rawWorkOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
-        // 依工作單流水號/工程編號排序
         const workOrders = [...rawWorkOrders].sort((a, b) => {
           const aId = a.id || a.engNo || '';
           const bId = b.id || b.engNo || '';
@@ -1373,7 +1373,7 @@
         if (workOrders.length > 0) {
           workOrders.forEach(wo => {
             const rowData = [
-              d.caseNo, exportStatus,
+              d.caseNo, exportStatus, d.extCount,
               wo.id || '', wo.engNo || '', wo.status || '', wo.loc || '', wo.pcdNote || '', workOrders.length,
               ...baseCaseData
             ];
@@ -1381,7 +1381,7 @@
           });
         } else {
           const rowData = [
-            d.caseNo, exportStatus,
+            d.caseNo, exportStatus, d.extCount,
             '', '', '', '', '', 0,
             ...baseCaseData
           ];
