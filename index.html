@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-immersive-translate-page-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>路權挖掘案件管理_v5.2 (Supabase 版)</title>
+  
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f4f5f7;
+      --color-background-info: #e3f2fd;
+      --color-background-warning: #fff3e0;
+      --color-background-danger: #ffebee;
+      --color-background-success: #e8f5e9;
+      --color-background-purple: #f3e5f5;
+      --color-text-primary: #172b4d;
+      --color-text-secondary: #5e6c84;
+      --color-text-tertiary: #8993a4;
+      --color-text-info: #0b66c2;
+      --color-text-danger: #c5221f;
+      --color-text-success: #1e8e3e;
+      --color-text-purple: #7b1fa2;
+      --color-border-primary: rgba(9, 30, 66, 0.13);
+      --color-border-secondary: rgba(9, 30, 66, 0.08);
+      --color-border-tertiary: rgba(9, 30, 66, 0.04);
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--color-background-primary); color: var(--color-text-primary); padding: 20px; }
+    html, body { scrollbar-width: none; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; }
+    
+    .db-header { margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-tertiary); padding-bottom: 1rem; }
+    .db-header h1 { font-size: 26px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.5px;}
+    .db-header p { font-size: 14px; color: var(--color-text-tertiary); margin-top: 6px; }
+
+    .loading-status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--color-background-info); color: var(--color-text-info); border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; margin-bottom: 15px; width: fit-content; }
+    .spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid var(--color-text-info); width: 16px; height: 16px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 1.5rem; }
+    .metric { background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 1.2rem; border: 1px solid var(--color-border-tertiary); box-shadow: var(--shadow-sm); transition: transform 0.2s ease;}
+    .metric:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .metric-label { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 6px; font-weight: 500; }
+    .metric-value { font-size: 28px; font-weight: 700; margin: 0; color: var(--color-text-primary); letter-spacing: -1px;}
+    
+    .card { background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); }
+    .card-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
+    
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; padding: 6px 8px; border-radius: 6px; transition: all 0.15s ease; border: 1px solid transparent; cursor: pointer;}
+    .bar-row:hover { background: var(--color-background-secondary); transform: translateX(2px); }
+    .bar-row.active { background: var(--color-background-info); border-color: var(--color-border-info); font-weight: 600; }
+
+    .hide-board-engine { display: none !important; }
+    #contractor-bars { max-height: 280px; overflow-y: auto; padding-right: 6px; }
+    #contractor-bars::-webkit-scrollbar { width: 4px; }
+    #contractor-bars::-webkit-scrollbar-thumb { background: var(--color-border-secondary); border-radius: 2px; }
+
+    .bar-label { width: 140px; min-width: 140px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;}
+    .bar-track { flex: 1; background: var(--color-background-secondary); border-radius: 6px; height: 12px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s cubic-bezier(0.4, 0.2, 1); }
+    .bar-count { width: 55px; text-align: right; color: var(--color-text-primary); font-weight: 600; }
+    
+    .tag { display: inline-block; font-size: 12px; padding: 4px 8px; border-radius: var(--border-radius-md); font-weight: 600; white-space: nowrap; letter-spacing: 0.2px;}
+    
+    .filter-section-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center; max-height: 140px; overflow-y: auto; padding: 2px; border-radius: 4px; }
+    .filter-row::-webkit-scrollbar { width: 4px; height: 4px; }
+    .filter-row::-webkit-scrollbar-thumb { background: var(--color-border-secondary); border-radius: 2px; }
+    .filter-btn { font-size: 12px; padding: 6px 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s ease; font-weight: 500;}
+    .filter-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); border-color: var(--color-border-secondary);}
+    .filter-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); font-weight: 600; box-shadow: inset 0 0 0 1px var(--color-border-info);}
+    
+    .search-input-box { width: 100%; max-width: 500px; height: 40px; padding: 8px 14px; font-size: 14px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); outline: none; margin-bottom: 1.2rem; box-shadow: var(--shadow-sm);}
+    .search-input-box:focus { border-color: var(--color-text-info); box-shadow: 0 0 0 3px var(--color-background-info); }
+
+    .note-input { width: 130px; height: 28px; font-size: 13px; padding: 4px 8px; border: 1px solid var(--color-border-secondary); border-radius: 4px; }
+    .note-save-btn { font-size: 12px; font-weight: 600; padding: 5px 10px; background: var(--color-background-info); color: var(--color-text-info); border: none; border-radius: 4px; cursor: pointer; margin-left: 6px; }
+
+    .table-container { background: var(--color-background-primary); border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); padding: 10px; box-shadow: var(--shadow-sm); }
+    table.dataTable thead th { border-bottom: 2px solid var(--color-border-secondary) !important; background: var(--color-background-secondary); font-size: 14px; font-weight: 600; color: var(--color-text-secondary); white-space: nowrap; cursor: pointer;}
+    table.dataTable tbody td { border-bottom: 1px solid var(--color-border-tertiary) !important; padding: 10px 8px; white-space: nowrap; vertical-align: middle; }
+    table.dataTable tbody tr:hover td { background: var(--color-background-info); }
+    
+    .dataTables_wrapper .dataTables_paginate { margin-top: 15px; }
+    .dataTables_wrapper .dataTables_info { margin-top: 15px; font-weight: 600; color: var(--color-text-info); }
+    .dataTables_wrapper .dataTables_length { margin-bottom: 10px; }
+    .dataTables_wrapper .dataTables_length select { border-radius: 4px; padding: 4px; border: 1px solid var(--color-border-secondary); outline: none; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button { padding: 4px 12px; margin: 0 4px; border-radius: 6px; border: 1px solid var(--color-border-tertiary) !important; background: var(--color-background-primary) !important; color: var(--color-text-secondary) !important; cursor: pointer; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: var(--color-background-info) !important; color: var(--color-text-info) !important; border-color: var(--color-border-info) !important; font-weight: bold; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover { background: var(--color-background-secondary) !important; border-color: var(--color-border-secondary) !important; }
+    
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    
+    .local-select { font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid var(--color-border-secondary); background:var(--color-background-primary); color:var(--color-text-primary); cursor:pointer; outline:none; box-shadow: var(--shadow-sm);}
+    .local-select:hover { border-color: var(--color-text-info); }
+
+    table.dataTable tbody td.dt-control { text-align: center; cursor: pointer; }
+    table.dataTable tbody td.dt-control:before { display: inline-block; color: var(--color-text-info); content: "➕"; font-size: 12px; }
+    table.dataTable tbody tr.shown td.dt-control:before { content: "➖"; }
+
+    .road-link-pill {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px; background: var(--color-background-info); color: var(--color-text-info);
+      text-decoration: none; border: 0.5px solid var(--color-border-info); transition: opacity 0.15s ease;
+    }
+    .road-link-pill:hover { opacity: 0.85; }
+  </style>
+
+  <!-- 引入 Supabase JS SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="db-header">
+    <h1>路權挖掘案件管理儀表板 <span style="font-size:14px; color:var(--color-text-info); background:var(--color-background-info); padding:4px 8px; border-radius:12px;">v5.2 (Supabase 版)</span></h1>
+    <p>智慧動態解析與多維度分析 </p>
+  </div>
+
+  <div id="loading-indicator" class="loading-status">
+     <div class="spinner"></div> 正在從 Supabase 同步資料，請稍候...
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric"><p class="metric-label">申請案件總數</p><p class="metric-value" id="m-total">-</p></div>
+    <div class="metric"><p class="metric-label">已發證 / 施工中</p><p class="metric-value" id="m-active" style="color:#0b66c2">-</p></div>
+    <div class="metric"><p class="metric-label">已完工</p><p class="metric-value" id="m-completed" style="color:#1e8e3e">-</p></div>
+    <div class="metric"><p class="metric-label">退件 / 停工異常</p><p class="metric-value" id="m-error" style="color:#c5221f">-</p></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <p class="card-title">案件類型分佈</p>
+        <button class="filter-btn" id="btn-toggle-type">📊 隱藏圖表</button>
+      </div>
+      <div id="type-bars"></div>
+    </div>
+    
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <p class="card-title">路權單位分佈 (Top 10)</p>
+            <select id="local-auth-year" class="local-select">
+                <option value="all">歷年總計</option>
+            </select>
+        </div>
+        <button class="filter-btn" id="btn-toggle-auth">📊 隱藏圖表</button>
+      </div>
+      <div id="auth-bars"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <p class="card-title">施工廠商負載看板</p>
+      <button class="filter-btn" id="btn-toggle-contractor">📊 隱藏看板</button>
+    </div>
+    <div id="contractor-bars"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <p class="card-title" style="margin:0; font-size:16px;">進階動態交叉篩選與智慧搜尋控制台</p>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:13px;font-weight:600;color:var(--color-text-info)" id="filter-count">0 件</span>
+        <button class="filter-btn" id="btn-export-excel-summary" style="background:var(--color-background-success); color:var(--color-text-success); border-color:var(--color-border-success); font-weight:600;">📥 匯出 Excel (案件總覽)</button>
+        <button class="filter-btn" id="btn-export-excel-detail" style="background:#e8f5e9; color:#1b5e20; border-color:#a5d6a7; font-weight:600;">📊 匯出 Excel (工作單拆列明細)</button>
+      </div>
+    </div>
+    
+    <div class="filter-section-title">🔍 智慧手動輸入篩選器：</div>
+    <input type="text" id="txt-search" class="search-input-box" placeholder="輸入案件編號、廠商、地點、狀態... (支援輸入「有備註」或「展延」)">
+
+    <div class="filter-section-title">🚨 異常與狀態警示篩選：</div>
+    <div class="filter-row" id="filter-alert-btns"></div>
+
+    <div class="filter-section-title">📅 年份篩選 (依案件編號前三碼)：</div>
+    <div class="filter-row" id="filter-year-btns"></div>
+
+    <div class="filter-section-title">📂 案件類型篩選：</div>
+    <div class="filter-row" id="filter-type-btns"></div>
+    
+    <div class="filter-section-title">🎯 施工目的篩選：</div>
+    <div class="filter-row" id="filter-purpose-btns"></div>
+
+    <div class="filter-section-title">🏢 路權單位篩選：</div>
+    <div class="filter-row" id="filter-auth-btns"></div>
+
+    <div class="filter-section-title">👷 施工廠商篩選：</div>
+    <div class="filter-row" id="filter-contractor-btns"></div>
+    
+    <div class="filter-section-title">👤 申請人篩選：</div>
+    <div class="filter-row" id="filter-applicant-btns"></div>
+
+    <div class="filter-section-title">🚦 申請狀態篩選：</div>
+    <div class="filter-row" id="filter-status-btns"></div>
+
+    <div class="filter-section-title" style="color:var(--color-text-info);">📋 自訂欄位顯示/隱藏設定 (點擊切換)：</div>
+    <div class="filter-row" id="filter-column-btns"></div>
+
+    <div class="table-container" style="overflow-x:auto;">
+      <table id="detail-table" class="display nowrap" style="width:auto"></table>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    // ================= Supabase 設定 =================
+    const SUPABASE_URL = "https://jttvtyrgusnzvybapbnk.supabase.co";
+    // 注意：在前端網頁中，請務必使用 anon (public) key，絕不可填入 service_role key！
+    const SUPABASE_ANON_KEY = "sb_publishable_70oOlt4BYk7Ec7KyaMKU0Q_beeP0Lcc"; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8J8wBMI4feKyITveSOTNfTUz0jNimhB2TmxXR0KnLGw458FenqFYDMqY3p2fmIR2_sA/exec";
+
+    let globalData = [];
+    let globalWorkOrdersByRoadCaseNo = {};
+    let globalDetailData = {};
+    let currentFilteredData = [];   
+    let selectedAlerts = new Set(); 
+    let selectedYears = new Set();  
+    let selectedTypes = new Set();   
+    let selectedPurposes = new Set(); 
+    let selectedContractors = new Set(); 
+    let selectedStatuses = new Set();  
+    let selectedAuths = new Set();
+    let selectedApplicants = new Set();
+    let textSearchQuery = ""; 
+    
+    let dataTableInstance = null; 
+    let searchDebounceTimer = null;
+    let filtersBound = false;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+    }
+
+    function safeUrl(value) {
+      try {
+        const url = new URL(String(value ?? ''), window.location.href);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+      } catch (_) { return ''; }
+    }
+
+    function parseTaiwanDate(dateStr) {
+      if (!dateStr) return null;
+      let str = String(dateStr).trim();
+
+      const twMatch = str.match(/(\d+)年(\d+)月(\d+)日?/);
+      if (twMatch) {
+        let y = parseInt(twMatch[1], 10);
+        if (y < 1911) y += 1911; 
+        let m = parseInt(twMatch[2], 10) - 1; 
+        let d = parseInt(twMatch[3], 10);
+        return new Date(y, m, d);
+      }
+
+      str = str.replace(/[-\.]/g, '/').replace(/\s+/g, '');
+      if (/^\d{6,8}$/.test(str)) {
+        let yLen = str.length >= 7 ? str.length - 4 : 2; 
+        let y = parseInt(str.substring(0, yLen), 10);
+        if (y < 1911) y += 1911;
+        let m = parseInt(str.substring(yLen, yLen+2), 10) - 1; 
+        let d = parseInt(str.substring(yLen+2, yLen+4), 10);
+        return new Date(y, m, d);
+      }
+      
+      let parts = str.split('/');
+      if (parts.length >= 3) {
+        let y = parseInt(parts[0], 10);
+        if (y < 1911) y += 1911; 
+        let m = parseInt(parts[1], 10) - 1;
+        let d = parseInt(parts[2], 10);
+        return new Date(y, m, d);
+      }
+      
+      let fb = new Date(dateStr);
+      return isNaN(fb.getTime()) ? null : fb;
+    }
+
+    function extractRoadCaseNo(rd1Note) {
+      if (!rd1Note) return null;
+      const str = String(rd1Note).trim();
+      if (!str || str === '---' || str.toLowerCase() === 'null') return null;
+      const m10 = str.match(/\b\d{10}\b/);
+      if (m10) return m10[0];
+      const appNoMatch = str.match(/AppNo=([A-Za-z0-9]+)/i);
+      if (appNoMatch) return appNoMatch[1];
+      if (str.length === 10) return str;
+      return null;
+    }
+
+    // ================= 🔧 Supabase 資料輔助函式 (修正版) =================
+    // 解析 =HYPERLINK("url","label") 公式 (原 Google Sheets 版的進/退場狀態就是這種格式)
+    function parseHyperlink(formula) {
+      if (!formula) return { url: '', label: '' };
+      const str = String(formula).trim();
+      const match = str.match(/=HYPERLINK\(\s*"([^"]+)"\s*[,;]\s*"([^"]*)"\s*\)/i);
+      if (match) return { url: match[1], label: match[2] };
+      return { url: '', label: str };
+    }
+
+    function formatGoogleSerialDate(serial) {
+      const num = Number(serial);
+      if (isNaN(num)) return String(serial).trim();
+      const target = new Date(Date.UTC(1899, 11, 30) + num * 86400000);
+      let y = target.getUTCFullYear(); if (y >= 1911) y -= 1911;
+      return `${String(y).padStart(3, '0')}年${String(target.getUTCMonth() + 1).padStart(2, '0')}月${String(target.getUTCDate()).padStart(2, '0')}日`;
+    }
+
+    function cleanDateVal(val) {
+      if (val === null || val === undefined || val === '') return '';
+      let str = String(val).trim();
+      if (str.startsWith('=')) str = parseHyperlink(str).label;
+      if (/^\d{5}$/.test(str)) return formatGoogleSerialDate(str); // 只轉 Excel 序列值，避免誤轉 1130101 之類的民國日期
+      return str;
+    }
+
+    // 容錯取欄位：完全相同 → 去空白/大小寫相同 → 欄名包含關鍵字
+    function pick(row, names) {
+      if (!row) return '';
+      const keys = Object.keys(row);
+      const norm = k => String(k).replace(/\s+/g, '').toLowerCase();
+      for (const n of names) { if (n in row && row[n] !== null && row[n] !== undefined) return row[n]; }
+      for (const n of names) {
+        const k = keys.find(k => norm(k) === norm(n));
+        if (k && row[k] !== null && row[k] !== undefined) return row[k];
+      }
+      for (const n of names) {
+        const k = keys.find(k => norm(k).includes(norm(n)));
+        if (k && row[k] !== null && row[k] !== undefined) return row[k];
+      }
+      return '';
+    }
+
+    // Supabase 預設單次最多回傳 1000 筆，必須分頁才能抓完整資料
+    async function fetchAllRows(table) {
+      const pageSize = 1000;
+      let all = [], from = 0;
+      while (true) {
+        const { data, error } = await supabaseClient.from(table).select('*').range(from, from + pageSize - 1);
+        if (error) return { data: all, error };
+        all = all.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return { data: all, error: null };
+    }
+
+    // 依雲林縣管線系統的固定規則產生照片網址：
+    // 進場 https://pwd.yunlin.gov.tw/AppCaseFile/WorkCheckin/{案件編號}_{YYYYMMDD}.jpg
+    // 退場 https://pwd.yunlin.gov.tw/AppCaseFile/WorkCheckout/{案件編號}_{YYYYMMDD}.jpg
+    function buildCheckPhotoUrl(kind, caseNo, dateText) {
+      const d = parseTaiwanDate(dateText);
+      if (!d || !caseNo) return '';
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      return `https://pwd.yunlin.gov.tw/AppCaseFile/${kind}/${encodeURIComponent(caseNo)}_${ymd}.jpg`;
+    }
+    // 狀態文字為空或為「無/未…」時，視為沒有打卡，不產生連結
+    function hasCheckStatus(label) {
+      const t = String(label || '').trim();
+      return t !== '' && !/^(無|未|尚未|-+|—+|null)/i.test(t);
+    }
+
+    function showDiagnostic(msg) {
+      let el = document.getElementById('diag-box');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'diag-box';
+        el.style.cssText = 'margin:0 0 16px; padding:12px 16px; border-radius:8px; background:#fff8e1; color:#8a5a00; border:1px solid #ffe082; font-size:13px; line-height:1.7;';
+        const anchor = document.getElementById('loading-indicator');
+        anchor.parentNode.insertBefore(el, anchor.nextSibling);
+      }
+      el.innerHTML += `<div>⚠️ ${msg}</div>`;
+    }
+
+    function formatChildRow(d) {
+        const details = globalDetailData[d.caseNoRaw] || [];
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNoRaw] || [];
+        
+        let html = `
+          <div style="padding:15px; background:var(--color-background-secondary); border-radius:8px; border: 1px solid var(--color-border-primary); margin: 5px 10px; display:flex; flex-direction:column; gap:16px; align-items:flex-start;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--color-background-primary); padding:8px 12px; border-radius:6px; border:1px solid var(--color-border-tertiary); width: fit-content;">
+              <span style="font-size:13px; font-weight:700; color:var(--color-text-primary);">快捷連結：</span>
+              <a href="https://pwd.yunlin.gov.tw/YLPipe/CaseState?AppNo=${encodeURIComponent(d.caseNoRaw)}" target="_blank" rel="noopener noreferrer" class="road-link-pill">
+                🔗 歷程
+              </a>
+              <a href="https://pwd.yunlin.gov.tw/YLPipe/AppIn" target="_blank" rel="noopener noreferrer" class="road-link-pill">
+                🌐 雲林管線挖掘系統 ↗
+              </a>
+            </div>
+        `;
+
+        if (workOrders.length > 0) {
+            html += `
+                <div style="max-width:100%;">
+                    <p style="font-weight:600; margin-bottom:8px; color:var(--color-text-info); font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <span>🔗 關聯工作單明細 (共 ${workOrders.length} 筆)：</span>
+                    </p>
+                    <div style="overflow-x:auto;">
+                      <table style="width:auto; border-collapse:collapse; background:var(--color-background-primary); border-radius:6px; overflow:hidden; box-shadow:var(--shadow-sm);">
+                          <thead>
+                              <tr style="background:#eef2f6; text-align:left; font-size:12px; font-weight:600; color:var(--color-text-secondary);">
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">工作單流水號</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">工程編號</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">回報狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">施工地點</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">RD1備註 (路權)</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">PCD施工備註</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+            `;
+            workOrders.forEach(wo => {
+                let statusTagHtml = '';
+                if ((wo.status || '').includes('1.已完工')) {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-success); color:var(--color-text-success); border:1px solid var(--color-border-success);">${escapeHtml(wo.status)}</span>`;
+                } else if ((wo.status || '').includes('未完工')) {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-warning); color:#d97a0d; border:1px solid #ffd54f;">${escapeHtml(wo.status)}</span>`;
+                } else {
+                    statusTagHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(wo.status || '未回報')}</span>`;
+                }
+
+                html += `
+                    <tr style="font-size:12px; border-bottom:1px solid #eef2f6;">
+                        <td style="padding:8px 12px; font-family:monospace; font-weight:600; color:var(--color-text-info); white-space:nowrap;">${escapeHtml(wo.id || wo.engNo || '未填寫')}</td>
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(wo.engNo || '')}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${statusTagHtml}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-primary);" title="${escapeHtml(wo.loc || '')}">${escapeHtml(wo.loc || '')}</td>
+                        <td style="padding:8px 12px; font-family:monospace; color:var(--color-text-secondary);">${escapeHtml(wo.rd1Note || '')}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-tertiary);" title="${escapeHtml(wo.pcdNote || '')}">${escapeHtml(wo.pcdNote || '')}</td>
+                    </tr>
+                `;
+            });
+            html += `
+                          </tbody>
+                      </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<div style="font-size:13px; color:var(--color-text-tertiary);">🔗 尚無關聯工作單資料。</div>`;
+        }
+
+        if (details.length > 0) {
+            html += `
+                <div style="max-width:100%;">
+                    <p style="font-weight:600; margin-bottom:8px; color:var(--color-text-info); font-size:13px;">📅 歷史打卡明細紀錄 (共 ${details.length} 筆)：</p>
+                    <div style="overflow-x:auto;">
+                      <table style="width:auto; border-collapse:collapse; background:var(--color-background-primary); border-radius:6px; overflow:hidden; box-shadow:var(--shadow-sm);">
+                          <thead>
+                              <tr style="background:#eef2f6; text-align:left; font-size:12px; font-weight:600; color:var(--color-text-secondary);">
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">打卡紀錄日</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">進場狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">退場狀態</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">施工日期</th>
+                                  <th style="padding:8px 12px; border-bottom:1px solid #d0d7de; white-space:nowrap;">備註</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+            `;
+
+            details.forEach(item => {
+                let checkInHtml = '';
+                const safeInUrl = safeUrl(item.inPhotoUrl);
+                if (safeInUrl) {
+                    checkInHtml = `<a href="${escapeHtml(safeInUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${escapeHtml(item.checkIn || '已打卡')}</span></a>`;
+                } else {
+                    checkInHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(item.checkIn || '無')}</span>`;
+                }
+
+                let checkOutHtml = '';
+                const safeOutUrl = safeUrl(item.outPhotoUrl);
+                if (safeOutUrl) {
+                    checkOutHtml = `<a href="${escapeHtml(safeOutUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9;">📸 ${escapeHtml(item.checkOut || '已退場')}</span></a>`;
+                } else {
+                    checkOutHtml = `<span class="tag" style="background:var(--color-background-secondary); color:var(--color-text-secondary); border:1px solid var(--color-border-secondary);">${escapeHtml(item.checkOut || '無')}</span>`;
+                }
+
+                html += `
+                    <tr style="font-size:12px; border-bottom:1px solid #eef2f6;">
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(item.recordDate || '')}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${checkInHtml}</td>
+                        <td style="padding:8px 12px; white-space:nowrap;">${checkOutHtml}</td>
+                        <td style="padding:8px 12px; font-family:monospace; white-space:nowrap;">${escapeHtml(item.workDate || '無')}</td>
+                        <td style="padding:8px 12px; color:var(--color-text-tertiary);" title="${escapeHtml(item.note || '')}">${escapeHtml(item.note || '')}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                          </tbody>
+                      </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<div style="font-size:13px; color:var(--color-text-tertiary);">📝 本案件尚無任何明細打卡紀錄。</div>`;
+        }
+
+        html += `</div>`;
+        return html;
+    }
+
+    // ================= 🚀 從 Supabase 抓取資料 =================
+    async function fetchCloudSheetsData() {
+      try {
+        // 1. 同時查詢三張表 (已加入分頁，避開 1000 筆上限)
+        const [caseRes, detailRes, woRes] = await Promise.all([
+            fetchAllRows('road_case_list'),
+            fetchAllRows('road_work_checkin'),
+            fetchAllRows('shtm33_mg')
+        ]);
+
+        if (caseRes.error) throw new Error("案件列表讀取失敗: " + caseRes.error.message);
+        if (detailRes.error) throw new Error("明細檔 road_work_checkin 讀取失敗: " + detailRes.error.message);
+        if (woRes.error) throw new Error("工作單 shtm33_mg 讀取失敗: " + woRes.error.message);
+
+        console.log('[診斷] road_case_list 筆數:', caseRes.data.length, '欄位:', Object.keys(caseRes.data[0] || {}));
+        console.log('[診斷] road_work_checkin 筆數:', detailRes.data.length, '欄位:', Object.keys(detailRes.data[0] || {}));
+        console.log('[診斷] shtm33_mg 筆數:', woRes.data.length, '欄位:', Object.keys(woRes.data[0] || {}));
+
+        // --- A. 解析工作單 (shtm33_mg) ---
+        globalWorkOrdersByRoadCaseNo = {};
+        const woRows = woRes.data || [];
+        woRows.forEach(row => {
+            const rd1Note = String(pick(row, ['RD1備註', 'rd1Note', 'rd1_note']) || '').trim();
+            const roadCaseNo = extractRoadCaseNo(rd1Note);
+            if (!roadCaseNo) return;
+
+            if (!globalWorkOrdersByRoadCaseNo[roadCaseNo]) globalWorkOrdersByRoadCaseNo[roadCaseNo] = [];
+
+            let rawStatus = String(pick(row, ['回報狀態', 'status']) || '').trim();
+            if (!rawStatus || rawStatus === 'null' || rawStatus === '尚未回報') rawStatus = '未回報';
+
+            globalWorkOrdersByRoadCaseNo[roadCaseNo].push({
+                engNo: String(pick(row, ['工程編號_x', '工程編號', 'engNo']) || '').trim(),
+                id: String(pick(row, ['工作單流水號', '工作單編號', 'id']) || '').trim(),
+                status: rawStatus,
+                loc: String(pick(row, ['施工地點', 'loc']) || '').trim(),
+                rd1Note: rd1Note,
+                pcdNote: String(pick(row, ['PCD施工備註', '施工備註', 'pcdNote']) || '').trim()
+            });
+        });
+
+        if (woRows.length === 0) {
+            showDiagnostic('shtm33_mg 讀到 0 筆：請到 Supabase 檢查該表是否有資料，以及是否已為 anon 角色建立 SELECT 的 RLS policy。');
+        } else if (Object.keys(globalWorkOrdersByRoadCaseNo).length === 0) {
+            showDiagnostic('shtm33_mg 有 ' + woRows.length + ' 筆，但沒有任何一筆能從「RD1備註」解析出案件編號。實際欄位：' + escapeHtml(Object.keys(woRows[0]).join('、')));
+        }
+
+        // --- B. 解析歷史打卡明細 (road_work_checkin) ---
+        globalDetailData = {};
+        const detailRows = detailRes.data || [];
+        detailRows.forEach(row => {
+            const caseNo = parseHyperlink(String(pick(row, ['案件編號']) || '').trim()).label.trim();
+            if (!caseNo) return;
+
+            if (!globalDetailData[caseNo]) globalDetailData[caseNo] = [];
+
+            // 進/退場狀態在原資料是 =HYPERLINK("照片網址","狀態") 公式，要拆出網址與文字
+            const inParsed  = parseHyperlink(String(pick(row, ['進場狀態']) || '').trim());
+            const outParsed = parseHyperlink(String(pick(row, ['退場狀態']) || '').trim());
+            const inPhoto  = String(pick(row, ['進場照片連結', '進場照片', '進場連結']) || '').trim();
+            const outPhoto = String(pick(row, ['退場照片連結', '退場照片', '退場連結']) || '').trim();
+
+            const recordDate = cleanDateVal(pick(row, ['打卡紀錄日']));
+            const workDate = cleanDateVal(pick(row, ['施工日期']));
+            const dateForUrl = recordDate || workDate;
+
+            globalDetailData[caseNo].push({
+                recordDate: recordDate,
+                checkIn: inParsed.label,
+                checkOut: outParsed.label,
+                // 優先順序：公式內的網址 → 資料表的照片欄位 → 依規則自動組出
+                inPhotoUrl: inParsed.url || inPhoto || (hasCheckStatus(inParsed.label) ? buildCheckPhotoUrl('WorkCheckin', caseNo, dateForUrl) : ''),
+                // 退場：即使狀態是「未退場」也一律給退場照片連結
+                outPhotoUrl: outParsed.url || outPhoto || buildCheckPhotoUrl('WorkCheckout', caseNo, dateForUrl),
+                workDate: workDate,
+                note: parseHyperlink(String(pick(row, ['備註']) || '').trim()).label
+            });
+        });
+
+        if (detailRows.length === 0) {
+            showDiagnostic('road_work_checkin 讀到 0 筆：通常是 RLS 沒有開放 anon 讀取（Supabase 此時不會報錯，只會回傳空陣列）。');
+        } else if (Object.keys(globalDetailData).length === 0) {
+            showDiagnostic('road_work_checkin 有 ' + detailRows.length + ' 筆，但找不到「案件編號」欄位。實際欄位：' + escapeHtml(Object.keys(detailRows[0]).join('、')));
+        }
+
+        for (let cNo in globalDetailData) {
+            globalDetailData[cNo].sort((a, b) => b.recordDate.localeCompare(a.recordDate));
+        }
+
+        // --- C. 解析案件主檔 (road_case_list) ---
+        const rows = caseRes.data || [];
+        if (rows.length === 0) throw new Error("Supabase [road_case_list] 內無任何資料。");
+
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0); 
+        const currentRocYear = todayDate.getFullYear() - 1911;
+
+        globalData = rows.map(row => {
+          let caseNo = String(row['案件編號'] || '').trim();
+          let statusVal = String(row['申請狀態'] || '未指派').trim();
+          let permitEndVal = String(row['路證日期迄'] || '').trim();
+          let note = String(row['備註'] || '').trim();
+          let year = (caseNo && caseNo.length >= 3) ? caseNo.substring(0, 3) : '未知';
+          
+          let rawExt = String(row['曾展延'] || '').trim();
+          let hasExtension = false;
+          let extCount = 0;
+
+          if (rawExt && rawExt !== "否" && rawExt !== "false") {
+              const numMatch = rawExt.match(/\d+/);
+              if (numMatch) {
+                  extCount = parseInt(numMatch[0], 10);
+                  hasExtension = extCount > 0;
+              } else if (rawExt.includes("是") || rawExt.includes("展") || rawExt.toLowerCase() === "true") {
+                  hasExtension = true;
+                  extCount = 1;
+              }
+          }
+
+          let isExpiringSoon = false;
+          let isOverdue = false;
+          let isCompletedOrCanceled = statusVal.includes('完工') || statusVal.includes('退') || statusVal.includes('已刪除') || statusVal.includes('已註銷') || statusVal.includes('已結案') || statusVal.includes('作廢');
+          
+          if (!isCompletedOrCanceled && permitEndVal) {
+              let pEnd = parseTaiwanDate(permitEndVal);
+              if (pEnd) {
+                  let diffDays = Math.ceil((pEnd.getTime() - todayDate.getTime()) / (1000 * 3600 * 24));
+                  if (diffDays < 0) isOverdue = true;               
+                  else if (diffDays <= 14) isExpiringSoon = true;   
+              }
+          }
+
+          return {
+            caseNo: caseNo,
+            year: year,
+            purpose: String(row['施工目的'] || '未填寫').trim(),
+            status: statusVal,
+            applicant: String(row['申請人'] || '未填寫').trim(),
+            location: String(row['挖掘地點'] || '').trim(),
+            contractor: (String(row['施工廠商'] || '未知').trim()).substring(0, 2),
+            supervisor: String(row['監工資訊'] || '').trim(),
+            note: note,
+            note1: String(row['備註1'] || '').trim(),
+            caseType: String(row['案件類型'] || '未分類').trim(),
+            authUnit: String(row['路權單位'] || '未知單位').trim(),
+            permitStart: String(row['路證日期起'] || '').trim(),
+            permitEnd: permitEndVal,
+            compReqDate: String(row['完工申請日'] || '').trim(),
+            manualNote: String(row['手動備註'] || '').trim(),
+            hasExtension: hasExtension,
+            extCount: extCount, 
+            rawExtText: rawExt || (hasExtension ? `是${extCount}` : '否'),
+            isExpiringSoon: isExpiringSoon, 
+            isOverdue: isOverdue,
+            isCompletedOrCanceled: isCompletedOrCanceled,
+            locMap: String(row['地點'] || '').trim(),
+            design: String(row['設計圖連結'] || '').trim()
+          };
+        }).filter(d => {
+          if (!d.caseNo) return false;
+          const caseRocYear = parseInt(d.year, 10);
+          if (!isNaN(caseRocYear) && d.isCompletedOrCanceled && caseRocYear <= (currentRocYear - 2)) {
+            return false;
+          }
+          return true;
+        }); 
+
+        document.getElementById('loading-indicator').style.display = 'none';
+        calculateAndRenderDashboard();
+      } catch (error) {
+        document.getElementById('loading-indicator').innerHTML = `❌ <b>Supabase 連線失敗</b>：${escapeHtml(error.message)}`;
+        document.getElementById('loading-indicator').style.background = 'var(--color-background-danger)';
+        document.getElementById('loading-indicator').style.color = 'var(--color-text-danger)';
+      }
+    }
+
+    function initDataTable() {
+      dataTableInstance = $('#detail-table').DataTable({
+        colReorder: true, 
+        paging: true,     
+        pageLength: 50,   
+        lengthMenu: [10, 25, 50, 100, 200, 500],
+        ordering: true,   
+        order: [], 
+        dom: '<"top"il>rt<"bottom"p><"clear">', 
+        language: {
+            "processing":   "處理中...",
+            "loadingRecords": "載入中...",
+            "lengthMenu":   "每頁顯示 _MENU_ 筆",
+            "zeroRecords":  "沒有符合的結果",
+            "info":         "顯示第 _START_ 至 _END_ 筆，共 _TOTAL_ 筆",
+            "infoEmpty":    "顯示 0 筆",
+            "infoFiltered": "(從 _MAX_ 筆結果中過濾)",
+            "paginate": { "first": "第一頁", "previous": "上一頁", "next": "下一頁", "last": "最後一頁" }
+        },
+        columns: [
+            { className: 'dt-control', orderable: false, data: null, defaultContent: '', width: '30px' },
+            { data: 'caseNo', title: '案件編號', width: '120px' },
+            { data: 'status', title: '申請狀態', width: '150px' },
+            { data: 'history', title: '打卡歷程', width: '110px' },
+            { data: 'checkInDate', title: '打卡記錄日', width: '120px' },
+            { data: 'design', title: '設計圖', width: '90px' },
+            { data: 'caseType', title: '案件類型', width: '120px' },
+            { data: 'purpose', title: '施工目的', width: '150px' },
+            { data: 'authUnit', title: '路權單位', width: '140px' },
+            { data: 'permitStart', title: '路證日期起', width: '100px' },
+            { data: 'permitEnd', title: '路證日期迄', width: '100px' },
+            { data: 'compReqDate', title: '完工申請日', width: '100px' },
+            { data: 'location', title: '挖掘地點', width: '210px' },
+            { data: 'note1', title: '備註1', width: '150px' },
+            { data: 'manualNote', title: '📝 手動備註', width: '220px', orderable: false },
+            { data: 'contractor', title: '施工廠商', width: '120px' },
+            { data: 'applicant', title: '申請人', width: '90px' },
+            { data: 'note', title: '備註', width: '150px' }
+        ]
+      });
+
+      setupColumnToggle();
+
+      $('#detail-table tbody').on('click', 'td.dt-control', function () {
+          var tr = $(this).closest('tr');
+          var row = dataTableInstance.row(tr);
+
+          if (row.child.isShown()) {
+              row.child.hide();
+              tr.removeClass('shown');
+          } else {
+              row.child(formatChildRow(row.data())).show();
+              tr.addClass('shown');
+          }
+      });
+      $('#detail-table tbody').on('click', '[data-action="save-note"]', function (event) {
+          event.preventDefault();
+          saveManualNote(this.dataset.caseNo);
+      });
+    }
+
+    function setupColumnToggle() {
+      const container = document.getElementById('filter-column-btns');
+      container.innerHTML = '';
+      const colCount = dataTableInstance.columns().count();
+      for (let i = 0; i < colCount; i++) {
+        let col = dataTableInstance.column(i);
+        let title = col.header().textContent.trim().replace('📝 ', ''); 
+        if (!title) continue;
+        let btn = document.createElement('button');
+        btn.className = 'filter-btn active'; 
+        btn.textContent = title;
+        btn.onclick = () => {
+          let targetCol = dataTableInstance.column(i); 
+          let isVisible = targetCol.visible();
+          targetCol.visible(!isVisible);
+          btn.classList.toggle('active', !isVisible); 
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function updateAuthChart() {
+      const selectedYear = document.getElementById('local-auth-year').value;
+      let chartData = globalData;
+      if (selectedYear !== 'all') {
+          chartData = globalData.filter(d => d.year === selectedYear);
+      }
+      const authMap = {}; 
+      chartData.forEach(d => { authMap[d.authUnit] = (authMap[d.authUnit] || 0) + 1; });
+      const authSortedFull = Object.entries(authMap).sort((a, b) => b[1] - a[1]);
+      const authSortedChart = authSortedFull.slice(0, 10);
+      renderBars('auth-bars', authSortedChart, '#1e8e3e', 'auth');
+      syncFilterUIStyles();
+    }
+
+    function calculateAndRenderDashboard() {
+      setupFilterControlLogic();
+
+      let activeCount = 0, compCount = 0, errCount = 0;
+      let expCount = 0, ovdCount = 0, normCount = 0; 
+      let extCount = 0;
+
+      globalData.forEach(d => {
+        const s = d.status;
+        if(s.includes('完工')) compCount++;
+        else if(s.includes('退件') || s.includes('退回') || s.includes('停工')) errCount++;
+        else if(s.includes('核准') || s.includes('發證') || s.includes('同意') || s.includes('施工中')) activeCount++;
+        
+        if (d.isOverdue) ovdCount++;
+        else if (d.isExpiringSoon) expCount++;
+        else normCount++;
+
+        if (d.hasExtension) extCount++;
+      });
+
+      document.getElementById('m-total').innerText = globalData.length.toLocaleString();
+      document.getElementById('m-active').innerText = activeCount.toLocaleString();
+      document.getElementById('m-completed').innerText = compCount.toLocaleString();
+      document.getElementById('m-error').innerText = errCount.toLocaleString();
+
+      let woIncompleteCount = 0, woCompleteCount = 0;
+      globalData.forEach(d => {
+        const wos = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        if (wos.length > 0) {
+          if (wos.some(wo => !(wo.status || '').includes('已完工'))) woIncompleteCount++;
+          else woCompleteCount++;
+        }
+      });
+
+      const alertEl = document.getElementById('filter-alert-btns');
+      alertEl.innerHTML = `
+          <button class="filter-btn active" data-alert="all">全部案件</button>
+          <button class="filter-btn" data-alert="hasExtension" style="color:var(--color-text-purple); font-weight:600;">🔄 曾展延案件 (${extCount})</button>
+          <button class="filter-btn" data-alert="overdue" style="color:var(--color-text-danger);">❌ 已逾期 (${ovdCount})</button>
+          <button class="filter-btn" data-alert="expiringSoon" style="color:#d97a0d;">⚠️ 即將逾期 (${expCount})</button>
+          <button class="filter-btn" data-alert="normal">✅ 狀態正常 (${normCount})</button>
+          <button class="filter-btn" data-alert="woIncomplete" style="color:var(--color-text-danger);">🚨 工作單未完工 (${woIncompleteCount})</button>
+          <button class="filter-btn" data-alert="woCompleted" style="color:#d97a0d;">🟡 工作單已完工 (${woCompleteCount})</button>
+      `;
+
+      const typeMap = {}; globalData.forEach(d => { typeMap[d.caseType] = (typeMap[d.caseType] || 0) + 1; });
+      const typeSorted = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
+      renderBars('type-bars', typeSorted, '#0b66c2', 'type');
+
+      const conMap = {}; globalData.forEach(d => { conMap[d.contractor] = (conMap[d.contractor] || 0) + 1; });
+      const conSorted = Object.entries(conMap).sort((a, b) => b[1] - a[1]);
+      const conBarsEl = document.getElementById('contractor-bars'); 
+      conBarsEl.style.display = 'grid'; conBarsEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))'; conBarsEl.style.gap = '8px';
+      const maxCon = conSorted[0] ? conSorted[0][1] : 1;
+      conBarsEl.innerHTML = conSorted.map(([name, count]) => {
+        const pct = (count / maxCon) * 100;
+        const safeName = escapeHtml(name);
+        return `<div class="bar-row" data-contractor="${safeName}" style="background:var(--color-background-secondary); padding: 8px; border-radius:6px; border:1px solid var(--color-border-secondary); width:100%;"><span class="bar-label" style="width:100px;">${safeName}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#7F77DD"></div></div><span class="bar-count">${count} 件</span></div>`;
+      }).join('');
+
+      const yearMap = {}; globalData.forEach(d => { yearMap[d.year] = (yearMap[d.year] || 0) + 1; });
+      const yearSorted = Object.entries(yearMap).sort((a, b) => b[0].localeCompare(a[0]));
+
+      const authYearSelect = document.getElementById('local-auth-year');
+      authYearSelect.innerHTML = '<option value="all">歷年總計</option>' + yearSorted
+        .filter(([y]) => y !== '未知')
+        .map(([y]) => `<option value="${escapeHtml(y)}">${escapeHtml(y)}年</option>`).join('');
+      updateAuthChart();
+
+      const purposeMap = {}; globalData.forEach(d => { purposeMap[d.purpose] = (purposeMap[d.purpose] || 0) + 1; });
+      const purposeSorted = Object.entries(purposeMap).sort((a, b) => b[1] - a[1]);
+
+      const applicantMap = {}; globalData.forEach(d => { applicantMap[d.applicant] = (applicantMap[d.applicant] || 0) + 1; });
+      const applicantSorted = Object.entries(applicantMap).sort((a, b) => b[1] - a[1]);
+
+      const statusMap = {}; globalData.forEach(d => { statusMap[d.status] = (statusMap[d.status] || 0) + 1; });
+      const statusSorted = Object.entries(statusMap).sort((a, b) => b[1] - a[1]);
+      
+      generateFilterButtons('filter-year-btns', yearSorted, 'year', '全部年份');
+      generateFilterButtons('filter-type-btns', typeSorted, 'type', '全部類型');
+      generateFilterButtons('filter-purpose-btns', purposeSorted, 'purpose', '全部目的'); 
+      
+      const allAuthMap = {}; globalData.forEach(d => { allAuthMap[d.authUnit] = (allAuthMap[d.authUnit] || 0) + 1; });
+      const allAuthSorted = Object.entries(allAuthMap).sort((a, b) => b[1] - a[1]);
+      generateFilterButtons('filter-auth-btns', allAuthSorted, 'auth', '全部單位');
+      
+      generateFilterButtons('filter-contractor-btns', conSorted, 'contractor', '全部廠商');
+      generateFilterButtons('filter-applicant-btns', applicantSorted, 'applicant', '全部申請人');
+      generateFilterButtons('filter-status-btns', statusSorted, 'status', '全部狀態');
+
+      renderTable();
+    }
+
+    function renderBars(elementId, dataSorted, color, dataSetKey) {
+        const el = document.getElementById(elementId);
+        const max = dataSorted[0] ? dataSorted[0][1] : 1;
+        el.innerHTML = dataSorted.map(([name, count]) => {
+          const pct = (count / max) * 100;
+          const safeName = escapeHtml(name);
+          return `<div class="bar-row" data-${dataSetKey}="${safeName}"><span class="bar-label" title="${safeName}">${safeName}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-count">${count}</span></div>`;
+        }).join('');
+    }
+
+    function generateFilterButtons(elementId, dataSorted, dataSetKey, allText) {
+        const el = document.getElementById(elementId);
+        const buttons = dataSorted.map(([name, count]) => {
+            let label = dataSetKey === 'year' && name !== '未知' ? `${name}年 (${count})` : `${name} (${count})`;
+            return `<button class="filter-btn" data-${dataSetKey}="${escapeHtml(name)}">${escapeHtml(label)}</button>`;
+        });
+        el.innerHTML = `<button class="filter-btn active" data-${dataSetKey}="all">${escapeHtml(allText)}</button>${buttons.join('')}`;
+    }
+
+    function setupFilterControlLogic() {
+      if (filtersBound) return;
+      filtersBound = true;
+      document.getElementById('btn-export-excel-summary').addEventListener('click', exportFilteredTableToExcelSummary);
+      document.getElementById('btn-export-excel-detail').addEventListener('click', exportFilteredTableToExcelDetail);
+
+      document.getElementById('local-auth-year').addEventListener('change', updateAuthChart);
+
+      ['type', 'auth', 'contractor'].forEach(id => {
+        document.getElementById(`btn-toggle-${id}`).addEventListener('click', e => {
+          const el = document.getElementById(`${id}-bars`); const btn = e.target;
+          if (el.classList.contains('hide-board-engine')) { el.classList.remove('hide-board-engine'); btn.textContent = `📊 隱藏`; btn.classList.remove('active'); } 
+          else { el.classList.add('hide-board-engine'); btn.textContent = `📊 顯示`; btn.classList.add('active'); }
+        });
+      });
+
+      document.getElementById('txt-search').addEventListener('input', e => {
+        clearTimeout(searchDebounceTimer);
+        const value = e.target.value;
+        searchDebounceTimer = setTimeout(() => {
+          textSearchQuery = value.toLowerCase().trim();
+          renderTable();
+        }, 200);
+      });
+
+      const bindFilterClick = (containerId, dataKey, setObj) => {
+        const container = document.getElementById(containerId);
+        if(container) {
+          container.addEventListener('click', e => {
+            const item = e.target.closest('.bar-row, .filter-btn'); if (!item) return;
+            const target = item.dataset[dataKey];
+            if (target === 'all') setObj.clear();
+            else { if (setObj.has(target)) setObj.delete(target); else setObj.add(target); }
+            renderTable();
+          });
+        }
+      };
+
+      bindFilterClick('type-bars', 'type', selectedTypes);
+      bindFilterClick('auth-bars', 'auth', selectedAuths);
+      bindFilterClick('contractor-bars', 'contractor', selectedContractors);
+      
+      bindFilterClick('filter-alert-btns', 'alert', selectedAlerts); 
+      bindFilterClick('filter-year-btns', 'year', selectedYears); 
+      bindFilterClick('filter-type-btns', 'type', selectedTypes);
+      bindFilterClick('filter-purpose-btns', 'purpose', selectedPurposes); 
+      bindFilterClick('filter-auth-btns', 'auth', selectedAuths);
+      bindFilterClick('filter-contractor-btns', 'contractor', selectedContractors);
+      bindFilterClick('filter-applicant-btns', 'applicant', selectedApplicants);
+      bindFilterClick('filter-status-btns', 'status', selectedStatuses);
+    }
+
+    async function saveManualNote(caseNo) {
+      const noteInput = document.getElementById(`note-${caseNo}`);
+      const saveBtn = document.getElementById(`save-btn-${caseNo}`);
+      if (!noteInput) return;
+      const noteValue = noteInput.value.trim();
+      saveBtn.innerText = "⏳ 寫入"; saveBtn.disabled = true;
+      try {
+        // 🚀 同時將手動備註更新至 Supabase [road_case_list]
+        const { error } = await supabaseClient
+          .from('road_case_list')
+          .update({ 手動備註: noteValue })
+          .eq('案件編號', caseNo);
+
+        if (error) throw new Error(error.message);
+
+        saveBtn.innerText = "✅ 成功"; saveBtn.style.background = "var(--color-background-success)"; saveBtn.style.color = "var(--color-text-success)";
+        const targetObj = globalData.find(d => d.caseNo === caseNo); if (targetObj) targetObj.manualNote = noteValue;
+        setTimeout(() => { saveBtn.innerText = "儲存"; saveBtn.style.background = "var(--color-background-info)"; saveBtn.style.color = "var(--color-text-info)"; saveBtn.disabled = false; }, 1200);
+      } catch (err) { alert("寫入失敗：" + err.message); saveBtn.innerText = "儲存"; saveBtn.disabled = false; }
+    }
+
+    function syncFilterUIStyles() {
+      const syncUI = (containerId, dataKey, setObj) => {
+        document.querySelectorAll(`#${containerId} .bar-row, #${containerId} .filter-btn`).forEach(el => {
+          const val = el.dataset[dataKey];
+          if (val === 'all') el.classList.toggle('active', setObj.size === 0);
+          else el.classList.toggle('active', setObj.has(val));
+        });
+      };
+      syncUI('type-bars', 'type', selectedTypes);
+      syncUI('auth-bars', 'auth', selectedAuths);
+      syncUI('contractor-bars', 'contractor', selectedContractors);
+      
+      syncUI('filter-alert-btns', 'alert', selectedAlerts);
+      syncUI('filter-year-btns', 'year', selectedYears); 
+      syncUI('filter-type-btns', 'type', selectedTypes);
+      syncUI('filter-purpose-btns', 'purpose', selectedPurposes);
+      syncUI('filter-auth-btns', 'auth', selectedAuths);
+      syncUI('filter-contractor-btns', 'contractor', selectedContractors);
+      syncUI('filter-applicant-btns', 'applicant', selectedApplicants);
+      syncUI('filter-status-btns', 'status', selectedStatuses);
+    }
+
+    function renderTable() {
+      syncFilterUIStyles();
+
+      currentFilteredData = globalData.filter(d => {
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        const woSearchText = workOrders.map(w => `${w.id} ${w.engNo} ${w.status} ${w.loc} ${w.rd1Note} ${w.pcdNote}`).join(' ');
+        const hasManualNoteText = (d.manualNote && String(d.manualNote).trim() !== "") ? "已備註 有備註" : "";
+        const extSearchText = d.hasExtension ? `曾展延 展 展延 是${d.extCount} 展${d.extCount}` : "";
+
+        const matchesText = (textSearchQuery === '') ||
+          Object.values(d).some(v => String(v).toLowerCase().includes(textSearchQuery)) ||
+          woSearchText.toLowerCase().includes(textSearchQuery) ||
+          hasManualNoteText.includes(textSearchQuery) ||
+          extSearchText.toLowerCase().includes(textSearchQuery);
+
+        const hasWorkOrders = workOrders.length > 0;
+        const isWoIncomplete = hasWorkOrders && workOrders.some(wo => !(wo.status || '').includes('已完工'));
+        const isWoCompleted = hasWorkOrders && !workOrders.some(wo => !(wo.status || '').includes('已完工'));
+
+        const matchesAlert = (selectedAlerts.size === 0) ||
+          (selectedAlerts.has('hasExtension') && d.hasExtension) ||
+          (selectedAlerts.has('overdue') && d.isOverdue) ||
+          (selectedAlerts.has('expiringSoon') && d.isExpiringSoon) ||
+          (selectedAlerts.has('normal') && !d.isOverdue && !d.isExpiringSoon) ||
+          (selectedAlerts.has('woIncomplete') && isWoIncomplete) ||
+          (selectedAlerts.has('woCompleted') && isWoCompleted);
+
+        const matchesYear = (selectedYears.size === 0) || selectedYears.has(d.year);
+        const matchesType = (selectedTypes.size === 0) || selectedTypes.has(d.caseType);
+        const matchesPurpose = (selectedPurposes.size === 0) || selectedPurposes.has(d.purpose); 
+        const matchesContractor = (selectedContractors.size === 0) || selectedContractors.has(d.contractor);
+        const matchesAuth = (selectedAuths.size === 0) || selectedAuths.has(d.authUnit);
+        const matchesApplicant = (selectedApplicants.size === 0) || selectedApplicants.has(d.applicant);
+        const matchesStatus = (selectedStatuses.size === 0) || selectedStatuses.has(d.status);
+
+        return matchesText && matchesAlert && matchesYear && matchesType && matchesPurpose && matchesContractor && matchesAuth && matchesApplicant && matchesStatus;
+      });
+
+      currentFilteredData.sort((a, b) => {
+        const aDetails = globalDetailData[a.caseNo] || [];
+        const bDetails = globalDetailData[b.caseNo] || [];
+        const aDate = (aDetails.length > 0 && aDetails[0].recordDate) ? aDetails[0].recordDate : '';
+        const bDate = (bDetails.length > 0 && bDetails[0].recordDate) ? bDetails[0].recordDate : '';
+        
+        if (aDate && bDate) return bDate.localeCompare(aDate);
+        if (aDate && !bDate) return -1;
+        if (!aDate && bDate) return 1;
+        return 0;
+      });
+
+      document.getElementById('filter-count').innerText = `${currentFilteredData.length.toLocaleString()} 件`;
+
+      const mappedData = currentFilteredData.map(d => {
+        let permitEndHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitEnd || '')}</span>`;
+        if (d.isOverdue) {
+            permitEndHtml += `<br><span style="font-size:11px; font-weight:bold; color:#fff; background:var(--color-text-danger); padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px;">❌ 已逾期</span>`;
+        } else if (d.isExpiringSoon) {
+            permitEndHtml += `<br><span style="font-size:11px; font-weight:bold; color:#d97a0d; background:var(--color-background-warning); border:1px solid #ffd54f; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px;">⚠️ 即將逾期</span>`;
+        }
+
+        const details = globalDetailData[d.caseNo] || [];
+        let historyHtml = '';
+        if (details.length > 0) {
+            historyHtml = `<span class="tag" style="background:#e8f5e9; color:#1e8e3e; border:1px solid #c8e6c9; font-weight:600;">🏷️ 已打卡 ${details.length} 次</span>`;
+        } else {
+            historyHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無紀錄</span>`;
+        }
+
+        let latestRecordDateHtml = '';
+        if (details.length > 0 && details[0].recordDate) {
+            latestRecordDateHtml = `<span style="font-family:monospace;font-size:13px;color:var(--color-text-primary); font-weight:500;">${escapeHtml(details[0].recordDate)}</span>`;
+        } else {
+            latestRecordDateHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無紀錄</span>`;
+        }
+
+        let locationHtml = `<span style="font-size:13px;color:var(--color-text-primary);" title="${escapeHtml(d.location || '')}">${escapeHtml(d.location || '')}</span>`;
+        const safeMapUrl = safeUrl(d.locMap);
+        if (safeMapUrl) {
+            locationHtml += ` <a href="${escapeHtml(safeMapUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; margin-left:6px;" title="查看地圖">🗺️</a>`;
+        }
+
+        let designUrl = safeUrl(d.design);
+        if (!designUrl && d.caseNo) {
+            designUrl = `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+        }
+
+        let designHtml = '';
+        if (designUrl) {
+            designHtml = `<a href="${escapeHtml(designUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="tag" style="background:#e3f2fd; color:#0b66c2; border:1px solid #bbdefb;">📐 查看設計圖</span></a>`;
+        } else {
+            designHtml = `<span style="color:var(--color-text-tertiary); font-size:12px;">無</span>`;
+        }
+
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        let caseNoStyle = 'font-family:monospace;font-size:14px;font-weight:700;color:var(--color-text-info);';
+        let caseNoTitle = '';
+
+        if (workOrders.length > 0) {
+            const hasIncomplete = workOrders.some(wo => !(wo.status || '').includes('已完工'));
+            if (hasIncomplete) {
+                caseNoStyle += ' background:#ffebee; color:#c5221f; padding:3px 6px; border-radius:4px; border:1px solid #ffcdd2;';
+                caseNoTitle = `關聯工作單含有未完工/未完成項目 (共 ${workOrders.length} 筆)`;
+            } else {
+                caseNoStyle += ' background:#fff8e1; color:#b78103; padding:3px 6px; border-radius:4px; border:1px solid #ffe082;';
+                caseNoTitle = `關聯工作單已全數完工 (共 ${workOrders.length} 筆)`;
+            }
+        }
+
+        return {
+          caseNoRaw: d.caseNo,
+          caseNo: `<span style="${caseNoStyle}" title="${escapeHtml(caseNoTitle)}">${escapeHtml(d.caseNo || '')}</span>`,
+          status: `<div style="display:inline-flex; align-items:center; justify-content:flex-start; gap:4px; white-space:nowrap;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue, d.hasExtension, d.extCount)}</div>`,
+          history: historyHtml,
+          checkInDate: latestRecordDateHtml,
+          design: designHtml,
+          caseType: `<span style="font-size:13px;">${escapeHtml(d.caseType || '')}</span>`,
+          purpose: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${escapeHtml(d.purpose || '')}">${escapeHtml(d.purpose || '')}</span>`,
+          authUnit: `<span style="font-size:13px; font-weight:500;">${escapeHtml(d.authUnit || '')}</span>`,
+          contractor: `<span style="font-size:13px; font-weight:500; color:#5e6c84">${escapeHtml(d.contractor || '')}</span>`,
+          applicant: `<span style="font-size:13px;">${escapeHtml(d.applicant || '')}</span>`,
+          permitStart: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitStart || '')}</span>`,
+          permitEnd: permitEndHtml, 
+          compReqDate: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.compReqDate || '')}</span>`,
+          location: locationHtml,
+          supervisor: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.supervisor || '')}">${escapeHtml(d.supervisor || '')}</span>`,
+          note: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note || '')}">${escapeHtml(d.note || '')}</span>`,
+          note1: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note1 || '')}">${escapeHtml(d.note1 || '')}</span>`,
+          manualNote: `
+            <div style="display:flex; align-items:center;">
+              <input type="text" id="note-${escapeHtml(d.caseNo)}" class="note-input" value="${escapeHtml(d.manualNote || '')}" placeholder="點擊鍵入備註...">
+              <button id="save-btn-${escapeHtml(d.caseNo)}" class="note-save-btn" data-action="save-note" data-case-no="${escapeHtml(d.caseNo)}">儲存</button>
+            </div>
+          `
+        };
+      });
+
+      if (!dataTableInstance) {
+        initDataTable();
+      }
+      dataTableInstance.clear().rows.add(mappedData).draw();
+    }
+
+    function statusTag(s, isExpiringSoon, isOverdue, hasExtension, extCount) {
+      let tagHtml = '';
+      if (s.includes('完工')) tagHtml = `<span class="tag" style="background:var(--color-background-success);color:var(--color-text-success); border: 1px solid var(--color-border-success)">${s}</span>`;
+      else if (s.includes('退件') || s.includes('退回') || s.includes('停工') || s.includes('作廢')) tagHtml = `<span class="tag" style="background:var(--color-background-danger); color:var(--color-text-danger); border: 1px solid var(--color-text-danger)">${s}</span>`;
+      else if (s.includes('發證') || s.includes('核准') || s.includes('同意') || s.includes('施工中')) tagHtml = `<span class="tag" style="background:var(--color-background-info); color:var(--color-text-info); border: 1px solid var(--color-text-info)">${s}</span>`;
+      else tagHtml = `<span class="tag" style="background:var(--color-background-secondary);color:var(--color-text-secondary); border: 1px solid var(--color-border-secondary);">${s}</span>`;
+      
+      if (hasExtension) {
+        const supMap = { 1: '', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+        let countText = '';
+        if (extCount && extCount > 1) {
+          countText = supMap[extCount] !== undefined ? supMap[extCount] : `(${extCount})`;
+        }
+        tagHtml += `<span class="tag" style="background:var(--color-background-purple); color:var(--color-text-purple); border: 1px solid #ce93d8; padding: 2px 6px; font-weight: 700;" title="本案申請展延共 ${extCount || 1} 次">展${countText}</span>`;
+      }
+
+      return tagHtml;
+    }
+
+    function exportFilteredTableToExcelSummary() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
+      const headers = ["案件編號", "申請狀態", "展延次數", "關聯工作單數", "關聯工作單號", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
+      const dataAOA = [headers];
+
+      currentFilteredData.forEach(d => {
+        let exportStatus = d.status;
+        if (d.isOverdue) exportStatus += ' [❌已逾期]';
+        else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
+
+        const workOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        const woIds = workOrders.map(w => w.id || w.engNo).join(', ');
+        const details = globalDetailData[d.caseNo] || [];
+        const latest = details[0] || {};
+        let designUrl = d.design || `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+
+        const rowData = [
+          d.caseNo, exportStatus, d.extCount, workOrders.length, woIds, details.length, latest.checkIn || '', latest.checkOut || '', latest.recordDate || '', designUrl,
+          d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
+          d.permitStart, d.permitEnd, d.compReqDate, d.location, d.locMap,
+          d.supervisor, d.note, d.note1, d.manualNote
+        ];
+        dataAOA.push(rowData);
+      });
+
+      const today = new Date(); const yyyy = today.getFullYear(); const mm = String(today.getMonth() + 1).padStart(2, '0'); const dd = String(today.getDate()).padStart(2, '0');
+      const filename = `路權挖掘案件_案件總覽報表_${yyyy}${mm}${dd}.xlsx`;
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(dataAOA);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "案件總覽");
+        XLSX.writeFile(wb, filename);
+      } catch (err) { alert("匯出 Excel 時發生錯誤：" + err.message); }
+    }
+
+    function exportFilteredTableToExcelDetail() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
+      const headers = ["案件編號", "申請狀態", "展延次數", "工作單流水號", "工程編號", "回報狀態", "施工地點", "PCD施工備註", "關聯工作單數", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
+      const dataAOA = [headers];
+
+      const sortedData = [...currentFilteredData].sort((a, b) => (a.caseNo || '').localeCompare(b.caseNo || ''));
+      sortedData.forEach(d => {
+        let exportStatus = d.status;
+        if (d.isOverdue) exportStatus += ' [❌已逾期]';
+        else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
+
+        const rawWorkOrders = globalWorkOrdersByRoadCaseNo[d.caseNo] || [];
+        const workOrders = [...rawWorkOrders].sort((a, b) => (a.id || a.engNo || '').localeCompare(b.id || b.engNo || ''));
+        const details = globalDetailData[d.caseNo] || [];
+        const latest = details[0] || {};
+        let designUrl = d.design || `https://pwd.yunlin.gov.tw/YLPipe/NewApp/CaseShow?AppNo=${encodeURIComponent(d.caseNo)}&FolderName=DesignPic`;
+
+        const baseCaseData = [
+          details.length, latest.checkIn || '', latest.checkOut || '', latest.recordDate || '', designUrl,
+          d.caseType, d.purpose, d.authUnit, d.contractor, d.applicant,
+          d.permitStart, d.permitEnd, d.compReqDate, d.location, d.locMap,
+          d.supervisor, d.note, d.note1, d.manualNote
+        ];
+
+        if (workOrders.length > 0) {
+          workOrders.forEach(wo => {
+            dataAOA.push([d.caseNo, exportStatus, d.extCount, wo.id || '', wo.engNo || '', wo.status || '', wo.loc || '', wo.pcdNote || '', workOrders.length, ...baseCaseData]);
+          });
+        } else {
+          dataAOA.push([d.caseNo, exportStatus, d.extCount, '', '', '', '', '', 0, ...baseCaseData]);
+        }
+      });
+
+      const today = new Date(); const yyyy = today.getFullYear(); const mm = String(today.getMonth() + 1).padStart(2, '0'); const dd = String(today.getDate()).padStart(2, '0');
+      const filename = `路權挖掘案件_工作單拆列明細報表_${yyyy}${mm}${dd}.xlsx`;
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(dataAOA);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "工作單明細");
+        XLSX.writeFile(wb, filename);
+      } catch (err) { alert("匯出 Excel 時發生錯誤：" + err.message); }
+    }
+
+    window.addEventListener('DOMContentLoaded', fetchCloudSheetsData);
+  </script>
+</body>
+</html>
