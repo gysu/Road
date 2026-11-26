@@ -114,6 +114,25 @@
       text-decoration: none; border: 0.5px solid var(--color-border-info); transition: opacity 0.15s ease;
     }
     .road-link-pill:hover { opacity: 0.85; }
+
+    #col-filter-row th { padding: 5px 6px !important; background: var(--color-background-secondary) !important; border-bottom: 1px solid var(--color-border-secondary) !important; cursor: default !important; }
+    #col-filter-row th::before, #col-filter-row th::after { display: none !important; }
+    #col-filter-row input, #col-filter-row select {
+      width: 100%; min-width: 68px; box-sizing: border-box; font-size: 12px; padding: 4px 6px;
+      border: 1px solid var(--color-border-secondary); border-radius: 4px;
+      background: var(--color-background-primary); color: var(--color-text-primary); outline: none;
+    }
+    #col-filter-row input:focus, #col-filter-row select:focus { border-color: var(--color-text-info); }
+    #col-filter-row input.has-val, #col-filter-row select.has-val {
+      border-color: var(--color-text-info); box-shadow: 0 0 0 1px var(--color-text-info) inset;
+      background: var(--color-background-info);
+    }
+    #btn-clear-col-filters {
+      margin: 0 0 8px 0; padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 6px;
+      border: 1px solid var(--color-border-secondary); background: var(--color-background-danger);
+      color: var(--color-text-danger); cursor: pointer; display: none;
+    }
+    #btn-clear-col-filters:hover { filter: brightness(0.96); }
   </style>
 
   <!-- 引入 Supabase JS SDK CDN -->
@@ -692,9 +711,17 @@
       }
     }
 
+    const DT_COL_FILTER_TYPES = {
+      status: 'select', history: 'select', design: 'select', caseType: 'select',
+      purpose: 'select', authUnit: 'select', contractor: 'select', applicant: 'select'
+    };
+    const DT_ORTHO_RENDER = { _: 'display', sort: 'sort', filter: 'filter' };
+    let dtColSelectSig = {};
+
     function initDataTable() {
       dataTableInstance = $('#detail-table').DataTable({
         colReorder: true, 
+        orderCellsTop: true,
         paging: true,     
         pageLength: 50,   
         lengthMenu: [10, 25, 50, 100, 200, 500],
@@ -712,28 +739,40 @@
             "paginate": { "first": "第一頁", "previous": "上一頁", "next": "下一頁", "last": "最後一頁" }
         },
         columns: [
-            { className: 'dt-control', orderable: false, data: null, defaultContent: '', width: '30px' },
-            { data: 'caseNo', title: '案件編號', width: '120px' },
-            { data: 'status', title: '申請狀態', width: '150px' },
-            { data: 'history', title: '打卡歷程', width: '110px' },
-            { data: 'checkInDate', title: '打卡記錄日', width: '120px' },
-            { data: 'design', title: '設計圖', width: '90px' },
-            { data: 'caseType', title: '案件類型', width: '120px' },
-            { data: 'purpose', title: '施工目的', width: '150px' },
-            { data: 'authUnit', title: '路權單位', width: '140px' },
-            { data: 'permitStart', title: '路證日期起', width: '100px' },
-            { data: 'permitEnd', title: '路證日期迄', width: '100px' },
-            { data: 'compReqDate', title: '完工申請日', width: '100px' },
-            { data: 'location', title: '挖掘地點', width: '210px' },
-            { data: 'note1', title: '備註1', width: '150px' },
-            { data: 'manualNote', title: '📝 手動備註', width: '220px', orderable: false },
-            { data: 'contractor', title: '施工廠商', width: '120px' },
-            { data: 'applicant', title: '申請人', width: '90px' },
-            { data: 'note', title: '備註', width: '150px' }
+            { name: '_ctrl', className: 'dt-control', orderable: false, searchable: false, data: null, defaultContent: '', width: '30px' },
+            { name: 'caseNo', data: 'caseNo', title: '案件編號', width: '120px', render: DT_ORTHO_RENDER },
+            { name: 'status', data: 'status', title: '申請狀態', width: '150px', render: DT_ORTHO_RENDER },
+            { name: 'history', data: 'history', title: '打卡歷程', width: '110px', render: DT_ORTHO_RENDER },
+            { name: 'checkInDate', data: 'checkInDate', title: '打卡記錄日', width: '120px', render: DT_ORTHO_RENDER },
+            { name: 'design', data: 'design', title: '設計圖', width: '90px', render: DT_ORTHO_RENDER },
+            { name: 'caseType', data: 'caseType', title: '案件類型', width: '120px', render: DT_ORTHO_RENDER },
+            { name: 'purpose', data: 'purpose', title: '施工目的', width: '150px', render: DT_ORTHO_RENDER },
+            { name: 'authUnit', data: 'authUnit', title: '路權單位', width: '140px', render: DT_ORTHO_RENDER },
+            { name: 'permitStart', data: 'permitStart', title: '路證日期起', width: '100px', render: DT_ORTHO_RENDER },
+            { name: 'permitEnd', data: 'permitEnd', title: '路證日期迄', width: '100px', render: DT_ORTHO_RENDER },
+            { name: 'compReqDate', data: 'compReqDate', title: '完工申請日', width: '100px', render: DT_ORTHO_RENDER },
+            { name: 'location', data: 'location', title: '挖掘地點', width: '210px', render: DT_ORTHO_RENDER },
+            { name: 'note1', data: 'note1', title: '備註1', width: '150px', render: DT_ORTHO_RENDER },
+            { name: 'manualNote', data: 'manualNote', title: '📝 手動備註', width: '220px', orderable: true, render: DT_ORTHO_RENDER },
+            { name: 'contractor', data: 'contractor', title: '施工廠商', width: '120px', render: DT_ORTHO_RENDER },
+            { name: 'applicant', data: 'applicant', title: '申請人', width: '90px', render: DT_ORTHO_RENDER },
+            { name: 'note', data: 'note', title: '備註', width: '150px', render: DT_ORTHO_RENDER }
         ]
       });
 
       setupColumnToggle();
+      setupColumnFilters();
+
+      dataTableInstance.on('column-visibility.dt', function (e, settings, columnIdx, state) {
+        const colName = settings.aoColumns[columnIdx] && settings.aoColumns[columnIdx].sName;
+        if (colName) {
+          $(`#col-filter-row th[data-col-name="${colName}"]`).toggle(state);
+        }
+      });
+
+      dataTableInstance.on('draw.dt', function () {
+        updateColumnFilterUI();
+      });
 
       $('#detail-table tbody').on('click', 'td.dt-control', function () {
           var tr = $(this).closest('tr');
@@ -751,6 +790,126 @@
           event.preventDefault();
           saveManualNote(this.dataset.caseNo);
       });
+    }
+
+    function setupColumnFilters() {
+      const thead = document.querySelector('#detail-table thead');
+      if (!thead || document.getElementById('col-filter-row')) return;
+
+      const fr = document.createElement('tr');
+      fr.id = 'col-filter-row';
+      const settings = dataTableInstance.settings()[0];
+
+      settings.aoColumns.forEach((colObj) => {
+        const colName = colObj.sName || '';
+        const th = document.createElement('th');
+        th.dataset.colName = colName;
+        if (!colName || colName === '_ctrl') {
+          th.innerHTML = '';
+        } else if (DT_COL_FILTER_TYPES[colName] === 'select') {
+          th.innerHTML = `<select data-col-name="${colName}"><option value="">全部</option></select>`;
+        } else {
+          th.innerHTML = `<input type="search" data-col-name="${colName}" placeholder="篩選...">`;
+        }
+        fr.appendChild(th);
+      });
+      thead.appendChild(fr);
+
+      let filterTimer = null;
+      fr.addEventListener('input', e => {
+        const el = e.target;
+        if (el.tagName !== 'INPUT') return;
+        const colName = el.dataset.colName;
+        const val = el.value.trim();
+        el.classList.toggle('has-val', !!val);
+        clearTimeout(filterTimer);
+        filterTimer = setTimeout(() => {
+          dataTableInstance.column(`${colName}:name`).search(val, false, true).draw();
+        }, 180);
+      });
+
+      fr.addEventListener('change', e => {
+        const el = e.target;
+        if (el.tagName !== 'SELECT') return;
+        const colName = el.dataset.colName;
+        const val = el.value;
+        el.classList.toggle('has-val', !!val);
+        const pattern = val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '';
+        dataTableInstance.column(`${colName}:name`).search(pattern, true, false).draw();
+      });
+
+      ['click', 'mousedown'].forEach(evt => {
+        fr.addEventListener(evt, e => e.stopPropagation());
+      });
+
+      if (!document.getElementById('btn-clear-col-filters')) {
+        const btn = document.createElement('button');
+        btn.id = 'btn-clear-col-filters';
+        btn.type = 'button';
+        btn.onclick = () => {
+          fr.querySelectorAll('input').forEach(i => { i.value = ''; i.classList.remove('has-val'); });
+          fr.querySelectorAll('select').forEach(s => { s.value = ''; s.classList.remove('has-val'); });
+          dataTableInstance.columns().search('').order([]).draw();
+        };
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) tableContainer.before(btn);
+      }
+    }
+
+    function refreshColumnFilterSelects() {
+      const fr = document.getElementById('col-filter-row');
+      if (!fr) return;
+      const extractors = {
+        status: d => d.status || '',
+        history: d => ((globalDetailData[d.caseNo] || []).length > 0 ? '有打卡' : '無紀錄'),
+        design: d => (safeUrl(d.design) || d.caseNo ? '有設計圖' : '無'),
+        caseType: d => d.caseType || '',
+        purpose: d => d.purpose || '',
+        authUnit: d => d.authUnit || '',
+        contractor: d => d.contractor || '',
+        applicant: d => d.applicant || ''
+      };
+      fr.querySelectorAll('select').forEach(sel => {
+        const colName = sel.dataset.colName;
+        const fn = extractors[colName];
+        if (!fn) return;
+        const vals = [...new Set(globalData.map(fn).filter(v => v !== ''))]
+          .sort((a, b) => a.localeCompare(b, 'zh-Hant', { numeric: true }));
+        const sig = vals.join('|');
+        if (dtColSelectSig[colName] === sig) return;
+        dtColSelectSig[colName] = sig;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">全部</option>' + vals.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        sel.value = cur;
+        sel.classList.toggle('has-val', !!cur);
+      });
+    }
+
+    function updateColumnFilterUI() {
+      if (!dataTableInstance) return;
+      const fr = document.getElementById('col-filter-row');
+      const activeCnt = fr ? [...fr.querySelectorAll('input, select')].filter(el => el.value.trim() !== '').length : 0;
+      const hasOrder = dataTableInstance.order().length > 0;
+      const btn = document.getElementById('btn-clear-col-filters');
+      if (btn) {
+        btn.style.display = (activeCnt || hasOrder) ? 'inline-block' : 'none';
+        btn.textContent = `✖ 清除欄位篩選/排序${activeCnt ? ` (${activeCnt})` : ''}`;
+      }
+      const total = currentFilteredData.length;
+      const shown = dataTableInstance.rows({ search: 'applied' }).count();
+      const countEl = document.getElementById('filter-count');
+      if (countEl) {
+        countEl.innerText = activeCnt > 0
+          ? `${shown.toLocaleString()} / ${total.toLocaleString()} 件`
+          : `${total.toLocaleString()} 件`;
+      }
+    }
+
+    function getActiveExportData() {
+      if (dataTableInstance) {
+        return dataTableInstance.rows({ search: 'applied', order: 'applied' }).data().toArray().map(r => r._raw).filter(Boolean);
+      }
+      return currentFilteredData;
     }
 
     function setupColumnToggle() {
@@ -1103,37 +1262,46 @@
             }
         }
 
+        const latestRecordDate = (details.length > 0 && details[0].recordDate) ? String(details[0].recordDate) : '';
+        const permitEndFilter = `${d.permitEnd || ''}${d.isOverdue ? ' 已逾期' : (d.isExpiringSoon ? ' 即將逾期' : '')}`;
+
         return {
+          _raw: d,
           caseNoRaw: d.caseNo,
-          caseNo: `<span style="${caseNoStyle}" title="${escapeHtml(caseNoTitle)}">${escapeHtml(d.caseNo || '')}</span>`,
-          status: `<div style="display:inline-flex; align-items:center; justify-content:flex-start; gap:4px; white-space:nowrap;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue, d.hasExtension, d.extCount)}</div>`,
-          history: historyHtml,
-          checkInDate: latestRecordDateHtml,
-          design: designHtml,
-          caseType: `<span style="font-size:13px;">${escapeHtml(d.caseType || '')}</span>`,
-          purpose: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${escapeHtml(d.purpose || '')}">${escapeHtml(d.purpose || '')}</span>`,
-          authUnit: `<span style="font-size:13px; font-weight:500;">${escapeHtml(d.authUnit || '')}</span>`,
-          contractor: `<span style="font-size:13px; font-weight:500; color:#5e6c84">${escapeHtml(d.contractor || '')}</span>`,
-          applicant: `<span style="font-size:13px;">${escapeHtml(d.applicant || '')}</span>`,
-          permitStart: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitStart || '')}</span>`,
-          permitEnd: permitEndHtml, 
-          compReqDate: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.compReqDate || '')}</span>`,
-          location: locationHtml,
+          caseNo: { display: `<span style="${caseNoStyle}" title="${escapeHtml(caseNoTitle)}">${escapeHtml(d.caseNo || '')}</span>`, sort: d.caseNo || '', filter: d.caseNo || '' },
+          status: { display: `<div style="display:inline-flex; align-items:center; justify-content:flex-start; gap:4px; white-space:nowrap;">${statusTag(d.status || '', d.isExpiringSoon, d.isOverdue, d.hasExtension, d.extCount)}</div>`, sort: d.status || '', filter: d.status || '' },
+          history: { display: historyHtml, sort: details.length, filter: details.length > 0 ? '有打卡' : '無紀錄' },
+          checkInDate: { display: latestRecordDateHtml, sort: latestRecordDate, filter: latestRecordDate || '無紀錄' },
+          design: { display: designHtml, sort: designUrl ? '有設計圖' : '無', filter: designUrl ? '有設計圖' : '無' },
+          caseType: { display: `<span style="font-size:13px;">${escapeHtml(d.caseType || '')}</span>`, sort: d.caseType || '', filter: d.caseType || '' },
+          purpose: { display: `<span style="font-size:13px;color:var(--color-text-secondary);" title="${escapeHtml(d.purpose || '')}">${escapeHtml(d.purpose || '')}</span>`, sort: d.purpose || '', filter: d.purpose || '' },
+          authUnit: { display: `<span style="font-size:13px; font-weight:500;">${escapeHtml(d.authUnit || '')}</span>`, sort: d.authUnit || '', filter: d.authUnit || '' },
+          contractor: { display: `<span style="font-size:13px; font-weight:500; color:#5e6c84">${escapeHtml(d.contractor || '')}</span>`, sort: d.contractor || '', filter: d.contractor || '' },
+          applicant: { display: `<span style="font-size:13px;">${escapeHtml(d.applicant || '')}</span>`, sort: d.applicant || '', filter: d.applicant || '' },
+          permitStart: { display: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.permitStart || '')}</span>`, sort: d.permitStart || '', filter: d.permitStart || '' },
+          permitEnd: { display: permitEndHtml, sort: d.permitEnd || '', filter: permitEndFilter },
+          compReqDate: { display: `<span style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);">${escapeHtml(d.compReqDate || '')}</span>`, sort: d.compReqDate || '', filter: d.compReqDate || '' },
+          location: { display: locationHtml, sort: d.location || '', filter: d.location || '' },
           supervisor: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.supervisor || '')}">${escapeHtml(d.supervisor || '')}</span>`,
-          note: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note || '')}">${escapeHtml(d.note || '')}</span>`,
-          note1: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note1 || '')}">${escapeHtml(d.note1 || '')}</span>`,
-          manualNote: `
+          note: { display: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note || '')}">${escapeHtml(d.note || '')}</span>`, sort: d.note || '', filter: d.note || '' },
+          note1: { display: `<span style="font-size:13px;color:var(--color-text-tertiary);" title="${escapeHtml(d.note1 || '')}">${escapeHtml(d.note1 || '')}</span>`, sort: d.note1 || '', filter: d.note1 || '' },
+          manualNote: {
+            display: `
             <div style="display:flex; align-items:center;">
               <input type="text" id="note-${escapeHtml(d.caseNo)}" class="note-input" value="${escapeHtml(d.manualNote || '')}" placeholder="點擊鍵入備註...">
               <button id="save-btn-${escapeHtml(d.caseNo)}" class="note-save-btn" data-action="save-note" data-case-no="${escapeHtml(d.caseNo)}">儲存</button>
             </div>
-          `
+          `,
+            sort: d.manualNote || '',
+            filter: d.manualNote || ''
+          }
         };
       });
 
       if (!dataTableInstance) {
         initDataTable();
       }
+      refreshColumnFilterSelects();
       dataTableInstance.clear().rows.add(mappedData).draw();
     }
 
@@ -1157,11 +1325,12 @@
     }
 
     function exportFilteredTableToExcelSummary() {
-      if (!currentFilteredData || currentFilteredData.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
+      const exportRows = getActiveExportData();
+      if (!exportRows || exportRows.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
       const headers = ["案件編號", "申請狀態", "展延次數", "關聯工作單數", "關聯工作單號", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
       const dataAOA = [headers];
 
-      currentFilteredData.forEach(d => {
+      exportRows.forEach(d => {
         let exportStatus = d.status;
         if (d.isOverdue) exportStatus += ' [❌已逾期]';
         else if (d.isExpiringSoon) exportStatus += ' [⚠️即將逾期]';
@@ -1192,11 +1361,12 @@
     }
 
     function exportFilteredTableToExcelDetail() {
-      if (!currentFilteredData || currentFilteredData.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
+      const exportRows = getActiveExportData();
+      if (!exportRows || exportRows.length === 0) { alert("目前沒有任何數據可以導出！"); return; }
       const headers = ["案件編號", "申請狀態", "展延次數", "工作單流水號", "工程編號", "回報狀態", "施工地點", "PCD施工備註", "關聯工作單數", "打卡次數", "最新進場狀態", "最新退場狀態", "打卡紀錄日", "設計圖連結", "案件類型", "施工目的", "路權單位", "施工廠商", "申請人", "路證日期起", "路證日期迄", "完工申請日", "挖掘地點", "地圖連結", "監工資訊", "備註", "備註1", "手動備註"];
       const dataAOA = [headers];
 
-      const sortedData = [...currentFilteredData].sort((a, b) => (a.caseNo || '').localeCompare(b.caseNo || ''));
+      const sortedData = [...exportRows].sort((a, b) => (a.caseNo || '').localeCompare(b.caseNo || ''));
       sortedData.forEach(d => {
         let exportStatus = d.status;
         if (d.isOverdue) exportStatus += ' [❌已逾期]';
